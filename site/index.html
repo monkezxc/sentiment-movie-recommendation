@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VibeMovie</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Jura:wght@300..700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./styles/style.css">
+</head>
+<body>
+    <button class="show-button">Show</button>
+    <div class="background">
+        <section class="main-container">
+            <div class="grid-container">
+                <div class="upper-section">
+                    <button class="close-button"></button>
+                </div>
+                <a class='menu-item menu-button home-button' href="#0">главная</a>
+                <a href="#0" class="menu-item menu-button emotions-button">эмоции</a>
+                <a href="#0" class="menu-item menu-button popular-button">популярное</a>
+                <div class="menu-button path"></div>
+                <div class="menu-button search">
+                    <input type="text" class="search-input" placeholder="Поиск">
+                </div>
+                <div class="menu-button assistant">
+                    <input type="text" class="assistant-input">
+                </div>
+                <section class="movie-list">
+                    <div class="loader" id="loader">Loading movies...</div>
+                </section>
+            </div>
+        </section>
+        
+    </div>
+    <script src="./script.js"></script>
+</body>
+</html>
