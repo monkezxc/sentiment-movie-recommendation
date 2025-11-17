@@ -49,25 +49,6 @@
     pointer-events: none;
 }
 
-<<<<<<< Updated upstream:site/styles/style.css
-.close-button {
-    display: flex;
-    width: 40px;
-    height: 40px;
-    background-image: url(../images/cross.png);
-    background-size: cover;
-    flex-basis: auto;
-    justify-self: end;
-    margin-top: 15px;
-    margin-right: 20px;
-    border: none;
-    background-color: aliceblue;
-    cursor: pointer;
-}
-
-.background {
-    background-image: url('../images/body_background.jpg');
-=======
 .glass-button {
     display: inline-flex;
     align-items: center;
@@ -91,7 +72,6 @@ body {
     position: relative;
     padding: 0;
     margin: 0;
->>>>>>> Stashed changes:site/style.css
     width: 100vw;
     height: 100vh;
     background-image: url(./images/body_background.jpg);
