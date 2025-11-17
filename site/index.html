@@ -4,36 +4,68 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VibeMovie</title>
+<<<<<<< Updated upstream
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Jura:wght@300..700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="./styles/style.css">
+=======
+    <link rel="stylesheet" href="style.css">
+>>>>>>> Stashed changes
 </head>
 <body>
-    <button class="show-button">Show</button>
-    <div class="background">
-        <section class="main-container">
-            <div class="grid-container">
-                <div class="upper-section">
-                    <button class="close-button"></button>
-                </div>
-                <a class='menu-item menu-button home-button' href="#0">главная</a>
-                <a href="#0" class="menu-item menu-button emotions-button">эмоции</a>
-                <a href="#0" class="menu-item menu-button popular-button">популярное</a>
-                <div class="menu-button path"></div>
-                <div class="menu-button search">
-                    <input type="text" class="search-input" placeholder="Поиск">
-                </div>
-                <div class="menu-button assistant">
-                    <input type="text" class="assistant-input">
-                </div>
-                <section class="movie-list">
-                    <div class="loader" id="loader">Loading movies...</div>
+    <div class="main-container">
+        <header class="header">
+            <label class="header__search-label header__button">
+                <input type="checkbox" class="header__search-checkbox visually-hidden">
+                <span class="header__search-pseudo-checkbox pseudo-checkbox glass-panel"></span>
+            </label>
+            <label class="header__menu-label header__button">
+                <input type="checkbox" class="header__menu-checkbox visually-hidden"></button>
+                <span class="header__menu-pseudo-checkbox pseudo-checkbox glass-panel"></span>
+            </label>
+        </header>
+        <main class="main">
+            <section class="main__card-container">
+                <section class="movie-info">
+                    <h2 class="movie-title">Interstellar</h2>
+                    <ul class="emotions-rating">
+                        <li class="emotions-rating-item emotion1">
+                            <span class="emotion1-emoji">😮</span>
+                            <span class="emotion1-rating">8.4</span>
+                        </li>
+                        <li class="emotions-rating-item emotion2">
+                            <span class="emotion2-emoji">😭</span>
+                            <span class="emotion2-rating">9.1</span>
+                        </li>
+                        <li class="emotions-rating-item emotion3">
+                            <span class="emotion3-emoji">🤯</span>
+                            <span class="emotion3-rating">9.6</span>
+                        </li>
+                    </ul>
                 </section>
-            </div>
+                <p class="movie-description">Когда засуха, пыльные бури и вымирание растений приводят человечество к продовольственному кризису, коллектив исследователей и учёных отправляется сквозь червоточину в путешествие, чтобы превзойти прежние ограничения для космических путешествий человека и найти планету с подходящими для человечества условиями.</p>
+                <ul class="movie-button-list">
+                    <li class="movie-button-list-item">
+                        <button type="button" class='button button-container__yes-button glass-button'>yes</button>
+                    </li>
+                    <li class="movie-button-list-item center-item">
+                        <button type="button" class='button button-container__more-button glass-button'>more</button>
+                    </li>
+                    <li class="movie-button-list-item">
+                        <button type="button" class='button button-container__no-button glass-button'>no</button>
+                    </li>
+                </ul>
+            </section>
+        </main>
+        <section class="search">
+            <select name="emotions" id="emotions" class="emotions-filter glass-panel" >
+                <option value="sadness" class="emotions-option">sadness</option>
+                <option value="joy" class="emotions-option">joy</option>
+                <option value="fear" class="emotions-option">fear</option>
+            </select>
+            <textarea name="text-search" id="text-search" class='text-search glass-panel'></textarea>
         </section>
-        
     </div>
-    <script src="./script.js"></script>
 </body>
 </html>
