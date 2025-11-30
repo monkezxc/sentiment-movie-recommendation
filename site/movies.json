@@ -1,723 +1,160 @@
-[
-  {
-    "id": 1,
-    "name": "The Shawshank Redemption",
-    "year": 1994,
-    "description": "Two imprisoned men bond over a number of years, finding solace and eventual redemption through acts of common decency.",
-    "poster": "https://via.placeholder.com/150x225?text=Shawshank",
-    "emotions": [
-      {"name": "Hope", "score": 9},
-      {"name": "Empathy", "score": 10},
-      {"name": "Relief", "score": 8}
+{
+    "movies": [
+        {
+            "title": "Мир в огне",
+            "release_year": "2025",
+            "description": "После того как мощная солнечная вспышка уничтожила восточное полушарие Земли, охотник за сокровищами отправляется в Европу, чтобы найти «Мону Лизу». Вскоре он осознаёт, что его ждёт более важная миссия, чем поиск картины.",
+            "vertical_poster": "https://image.tmdb.org/t/p/w780/xBWKgEDlXGrFAvjVzCUcPmw8kHk.jpg",
+            "horizontal_poster": "https://image.tmdb.org/t/p/w780/kHOfxq7cMTXyLbj0UmdoGhT540O.jpg",
+            "id": "1",
+            "rating": "6.786",
+            "genre": "фантастика, боевик, комедия",
+            "director": "Джей Джей Перри",
+            "actors": "Дейв Батиста, Ольга Куриленко, Кристофер Хивью, Сэмюэл Л. Джексон, Дэниел Бернхардт"
+        },
+        {
+            "title": "Война миров",
+            "release_year": "2025",
+            "description": "Скринлайф-экранизация романа «Война миров» Герберта Уэллса. Землю атакуют агрессивные пришельцы, использующие гигантских роботов с щупальцами. Людям предстоит бороться за выживание и попытаться дать отпор захватчикам. Фильм затронет темы слежки и конфиденциальности.",
+            "vertical_poster": "https://image.tmdb.org/t/p/w780/12dBX2CibQ0CXAJfIRBqOY6ac3h.jpg",
+            "horizontal_poster": "https://image.tmdb.org/t/p/w780/iZLqwEwUViJdSkGVjePGhxYzbDb.jpg",
+            "id": "2",
+            "rating": "4.3",
+            "genre": "фантастика, триллер",
+            "director": "Рич Ли",
+            "actors": "О'Ши 'Айс Кьюб' Джексон, Ева Лонгория, Кларк Грегг, Иман Бенсон, Генри Хантер Холл"
+        },
+        {
+            "title": "Наша вина",
+            "release_year": "2025",
+            "description": "Спустя четыре года после расставания Ник и Ноа воссоединяются на свадьбе Лайона и Дженны, и возникает вопрос, сможет ли их любовь преодолеть злобу Ника.",
+            "vertical_poster": "https://image.tmdb.org/t/p/w780/181frO8pQaK7UZUMycM3FodIBIf.jpg",
+            "horizontal_poster": "https://image.tmdb.org/t/p/w780/7QirCB1o80NEFpQGlQRZerZbQEp.jpg",
+            "id": "3",
+            "rating": "7.584",
+            "genre": "мелодрама, драма",
+            "director": "Доминго Гонсалес",
+            "actors": "Николь Уоллес, Габриель Гевара, Габриэла Андрада, Марта Хазас, Goya Toledo"
+        },
+        {
+            "title": "Истребитель демонов: Бесконечный замок",
+            "release_year": "2025",
+            "description": "Во время подготовки к решающему сражению с демонами члены Корпуса и столпы проходят изнурительную программу — Тренировку Хашира. Но внезапно сам Музан Кибуцудзи появляется в особняке Убуяшики. Когда глава Корпуса оказывается в смертельной опасности, Танджиро и Хашира спешат на помощь, но Музан втягивает их в таинственное пространство — замок Бесконечности, логово демонов. Так начинается финальное сражение между охотниками на демонов и силами зла.",
+            "vertical_poster": "https://image.tmdb.org/t/p/w780/rz1jMKpu4rq2wiKMyILF06aiSwP.jpg",
+            "horizontal_poster": "https://image.tmdb.org/t/p/w780/1RgPyOhN4DRs225BGTlHJqCudII.jpg",
+            "id": "4",
+            "rating": "7.8",
+            "genre": "мультфильм, боевик, фэнтези, триллер",
+            "director": "Харуо Сотодзаки",
+            "actors": "Нацуки Ханаэ, Хиро Симоно, Такахиро Сакурай, Акира Исида, Ёсицугу Мацуока"
+        },
+        {
+            "title": "Похищенная",
+            "release_year": "2025",
+            "description": "Мара в одиночку воспитывает любимую дочь, а ее бывший муж Карим время от времени забирает малышку на выходные. Однажды дочь пропадает, а Мара узнает, что Карим тайно вывез ее на свою родину в Сирию. Много лет обивая пороги, Мара не может вернуть дочку официальными путями. Однажды к ней обращается бывший морпех Митч, который предлагает Маре сделку — она должна помогать возвращать похищенных детей посредством тайных операций по всему миру. В ответ на это он обещает сделать всё, чтобы вернуть ее дочь домой. Пообещав помощь, Мара не догадывается, что будет втянута в опасную и жестокую игру, курируемую ЦРУ, а доброжелательный Митч — вовсе не тот, за кого себя выдаёт.",
+            "vertical_poster": "https://image.tmdb.org/t/p/w780/rRpOEyweJPAR1kxQ0KCXNiPxXIt.jpg",
+            "horizontal_poster": "https://image.tmdb.org/t/p/w780/qcDDn7WeKBenM4nLlOPXAeJ4hpg.jpg",
+            "id": "5",
+            "rating": "6.44",
+            "genre": "триллер, боевик, приключения",
+            "director": "Джеймс Кент",
+            "actors": "Кейт Бекинсейл, Скотт Иствуд, Jordan Duvigneau, Мэтт Крэйвен, Nowar Yusuf"
+        },
+        {
+            "title": "Мартин",
+            "release_year": "2024",
+            "description": "Сюжет фильма «Мартин» вращается вокруг бригадного лейтенанта Арджуна Саксены, чьё путешествие приводит его из Пакистана в Индию, где ему предстоит раскрыть свою настоящую личность и сразиться с торговцами чёрного рынка, которые вместе с террористами организуют масштабные теракты в стране.",
+            "vertical_poster": "https://image.tmdb.org/t/p/w780/zt4nj537ulc0fHL3lnQoydq8xn.jpg",
+            "horizontal_poster": "https://image.tmdb.org/t/p/w780/42xAe6kVeTjml9Tww6vRoWa5tay.jpg",
+            "id": "6",
+            "rating": "3.813",
+            "genre": "боевик, драма, триллер",
+            "director": "А. П. Арджун",
+            "actors": "Дхрува Сарджа, Вайбхави Сандилья, Анвеши Джайн, Джорджия Андреани, Запутанная история"
+        },
+        {
+            "title": "Дом из динамита",
+            "release_year": "2025",
+            "description": "На США летит межконтинентальная ядерная ракета, неизвестно кем запущенная. До поражения цели осталось 20 минут, военные и чиновники в Белом доме пытаются справиться с кризисом.",
+            "vertical_poster": "https://image.tmdb.org/t/p/w780/4zG1S9juONvoqy33A9nA5s3bnE5.jpg",
+            "horizontal_poster": "https://image.tmdb.org/t/p/w780/5SVRVwBfHCIkffiq0MmbdvnHWSz.jpg",
+            "id": "7",
+            "rating": "6.4",
+            "genre": "триллер, военный",
+            "director": "Кэтрин Бигелоу",
+            "actors": "Идрис Эльба, Ребекка Фергюсон, Гэбриел Бассо, Джаред Харрис, Трэйси Леттс"
+        },
+        {
+            "title": "Гадкая сестра",
+            "release_year": "2025",
+            "description": "Женщина с двумя дочерями выходит замуж за богатого, как она думала, вдовца, но после его внезапной смерти оказывается в ещё больших долгах. Её старшая дочь Эльвира, некрасивая сводная сестра прекрасной Агнес, мечтает выйти замуж за принца и готова на многое, чтобы стать красавицей и блистать на грядущем балу. Рассматривая это как выгодное вложение средств, мать отправляет Эльвиру на операцию по исправлению формы носа.",
+            "vertical_poster": "https://image.tmdb.org/t/p/w780/UG91zcuAWxuihvVtYBtKpRPhva.jpg",
+            "horizontal_poster": "https://image.tmdb.org/t/p/w780/kG8bBajeSTUxJGmS47WujcraZUk.jpg",
+            "id": "8",
+            "rating": "7.284",
+            "genre": "ужасы, комедия, фэнтези, драма",
+            "director": "Эмили Бличфельдт",
+            "actors": "Lea Mathilde Skar-Myren, Ane Dahl Torp, Теа Софи Лох Несс, Flo Fagerli, Isac Calmroth"
+        },
+        {
+            "title": "Эликсир",
+            "release_year": "2025",
+            "description": "Из-за некоего эликсира в деревне происходит восстание живых мертвецов. Теперь членам семьи, в которой царит разлад, придется объединиться ради борьбы за выживание.",
+            "vertical_poster": "https://image.tmdb.org/t/p/w780/epWmA7nadJE13LlGoqlut0hJWmf.jpg",
+            "horizontal_poster": "https://image.tmdb.org/t/p/w780/cNmGq1bfUDhrZEHvJ77zwiWfoNA.jpg",
+            "id": "9",
+            "rating": "5.872",
+            "genre": "ужасы, триллер",
+            "director": "Кимо Стамбол",
+            "actors": "Миха Тамбайонг, Ева Селия, Мартино Лио, Димас Ангара, Варен Арианда Калиф"
+        },
+        {
+            "title": "Человек-бензопила. Фильм: История Резе",
+            "release_year": "2025",
+            "description": "Дэндзи, который уже некоторое время работает в Бюро общественной безопасности, целыми днями только и думает о том, как стать ближе к Макиме — не только его начальнице, но и объекту его воздыханий. Дэндзи уверен в искренности своих чувств и даже не допускает мысли, что кто-то может затмить красоту и очарование его возлюбленной. По крайней мере, он так думал, пока не встретил Резе. Милая девушка, которая подрабатывает в кофейне, неожиданно заставила сердце Человека-бензопилы биться чаще. Но к добру ли это?",
+            "vertical_poster": "https://image.tmdb.org/t/p/w780/f4Bv4JWv85zHSisuq7SD2WeuJGr.jpg",
+            "horizontal_poster": "https://image.tmdb.org/t/p/w780/gqTz24ZRsCP6AKjARmEivY7m0cK.jpg",
+            "id": "10",
+            "rating": "8.234",
+            "genre": "мультфильм, боевик, мелодрама, фэнтези",
+            "director": "Тацуя Ёсихара",
+            "actors": "Кикуносукэ Тоя, Рэина Уэда, Сиори Идзава, Томори Кусуноки, Сёго Саката"
+        },
+        {
+            "title": "Заклятие 4: Последний обряд",
+            "release_year": "2025",
+            "description": "Исследователи паранормальных явлений Эд и Лоррейн Уоррен берутся за самый тревожный случай в своей практике. Семья переезжает в новый дом своей мечты, но вскоре их жилище начинает проявлять признаки демонической активности, превращая жизнь в кошмар.",
+            "vertical_poster": "https://image.tmdb.org/t/p/w780/1DPYceqs7OuKgUD13vrPFZ2SYRd.jpg",
+            "horizontal_poster": "https://image.tmdb.org/t/p/w780/tcBX2dtkNozZ0uDLVaxXrE6rqyN.jpg",
+            "id": "11",
+            "rating": "7",
+            "genre": "ужасы",
+            "director": "Майкл Чавес",
+            "actors": "Вера Фармига, Патрик Уилсон, Миа Томлинсон, Бен Харди, Ребекка Колдер"
+        },
+        {
+            "title": "Джестер 2",
+            "release_year": "2025",
+            "description": "Когда юная фокусница Макс сталкивается с таинственным и жестоким Джестером в ночь Хэллоуина, её обычные трюки превращаются в смертельное испытание. Чтобы выжить, девушке придётся перехитрить сверхъестественного убийцу, чья магия пугающе реальна, а каждая иллюзия заканчивается кровью.  Фильм объединяет ужасы, мистику и элементы слэшера, создавая атмосферу кошмара, где грань между реальностью и иллюзией стирается. Зрителей ждёт напряжённая история о страхе, ловушках и опасной игре с тьмой.",
+            "vertical_poster": "https://image.tmdb.org/t/p/w780/47dsw1jSOV0Be5zmy7CtLhYpqU.jpg",
+            "horizontal_poster": "https://image.tmdb.org/t/p/w780/yZtnGzfZER0QU7ZG4r4RaZAaXJH.jpg",
+            "id": "12",
+            "rating": "6.881",
+            "genre": "ужасы, триллер, криминал",
+            "director": "Колин Кравчук",
+            "actors": "Майкл Шеффилд, Кейтлин Трентэм, Дингани Беза, Хассен Касем, Джессика Амбуэль"
+        },
+        {
+            "title": "Три икса",
+            "release_year": "2002",
+            "description": "Ксандер Кэйдж - спортсмен-экстремал. Этот жестокий парень может сделать то, что не в силах выполнить другие люди. Именно поэтому он привлекает к себе внимание Управления национальной безопасности. Оснащенный самой современной шпионской техникой и оружием, Кэйдж должен просочиться в русские криминальные круги, находящиеся в Праге. Ничто не может помешать этому шпиону нового поколения ХХХ выполнить свою миссию, и никто не способен отвлечь его от задания. Никто, кроме таинственной девушки Елены...",
+            "vertical_poster": "https://image.tmdb.org/t/p/w780/2JhYyG66z3mEf0zorlnlc5MmJbJ.jpg",
+            "horizontal_poster": "https://image.tmdb.org/t/p/w780/qwK9soQmmJ7kRdjLZVXblw3g7AQ.jpg",
+            "id": "13",
+            "rating": "5.964",
+            "genre": "боевик, приключения, триллер, криминал",
+            "director": "Роб Коэн",
+            "actors": "Вин Дизель, Азия Ардженто, Мартон Чокаш, Сэмюэл Л. Джексон, Майкл Руф"
+        }
     ]
-  },
-  {
-    "id": 2,
-    "name": "The Godfather",
-    "year": 1972,
-    "description": "The aging patriarch of an organized crime dynasty transfers control of his clandestine empire to his reluctant son.",
-    "poster": "https://via.placeholder.com/150x225?text=Godfather",
-    "emotions": [
-      {"name": "Tension", "score": 9},
-      {"name": "Sadness", "score": 7},
-      {"name": "Pride", "score": 8}
-    ]
-  },
-  {
-    "id": 3,
-    "name": "The Dark Knight",
-    "year": 2008,
-    "description": "When the menace known as the Joker wreaks havoc on the people of Gotham, Batman must accept one of the greatest psychological and physical tests.",
-    "poster": "https://via.placeholder.com/150x225?text=Dark+Knight",
-    "emotions": [
-      {"name": "Suspense", "score": 10},
-      {"name": "Excitement", "score": 9},
-      {"name": "Anxiety", "score": 8}
-    ]
-  },
-  {
-    "id": 4,
-    "name": "Pulp Fiction",
-    "year": 1994,
-    "description": "The lives of two mob hitmen, a boxer, a gangster and his wife, and a pair of diner bandits intertwine in four tales of violence and redemption.",
-    "poster": "https://via.placeholder.com/150x225?text=Pulp+Fiction",
-    "emotions": [
-      {"name": "Shock", "score": 8},
-      {"name": "Amusement", "score": 9},
-      {"name": "Curiosity", "score": 8}
-    ]
-  },
-  {
-    "id": 5,
-    "name": "Forrest Gump",
-    "year": 1994,
-    "description": "The presidencies of Kennedy and Johnson unfold through the perspective of an Alabama man with an IQ of 75.",
-    "poster": "https://via.placeholder.com/150x225?text=Forrest+Gump",
-    "emotions": [
-      {"name": "Love", "score": 10},
-      {"name": "Nostalgia", "score": 9},
-      {"name": "Inspiration", "score": 9}
-    ]
-  },
-  {
-    "id": 6,
-    "name": "Inception",
-    "year": 2010,
-    "description": "A skilled thief is given a chance at redemption if he can pull off the impossible task of inception.",
-    "poster": "https://via.placeholder.com/150x225?text=Inception",
-    "emotions": [
-      {"name": "Confusion", "score": 9},
-      {"name": "Wonder", "score": 10},
-      {"name": "Intrigue", "score": 10}
-    ]
-  },
-  {
-    "id": 7,
-    "name": "The Matrix",
-    "year": 1999,
-    "description": "A computer hacker learns about the true nature of his reality and his role in the war against its controllers.",
-    "poster": "https://via.placeholder.com/150x225?text=Matrix",
-    "emotions": [
-      {"name": "Awe", "score": 10},
-      {"name": "Excitement", "score": 9},
-      {"name": "Disorientation", "score": 8}
-    ]
-  },
-  {
-    "id": 8,
-    "name": "Goodfellas",
-    "year": 1990,
-    "description": "The story of Henry Hill and his life in the mob, covering his relationship with his wife and his partners in the mob.",
-    "poster": "https://via.placeholder.com/150x225?text=Goodfellas",
-    "emotions": [
-      {"name": "Excitement", "score": 9},
-      {"name": "Fear", "score": 7},
-      {"name": "Fascination", "score": 8}
-    ]
-  },
-  {
-    "id": 9,
-    "name": "The Lord of the Rings: The Fellowship",
-    "year": 2001,
-    "description": "A meek Hobbit from the Shire and eight companions set out on a journey to destroy the powerful One Ring.",
-    "poster": "https://via.placeholder.com/150x225?text=LOTR+Fellowship",
-    "emotions": [
-      {"name": "Adventure", "score": 10},
-      {"name": "Courage", "score": 9},
-      {"name": "Friendship", "score": 10}
-    ]
-  },
-  {
-    "id": 10,
-    "name": "Fight Club",
-    "year": 1999,
-    "description": "An insomniac office worker and a devil-may-care soap maker form an underground fight club.",
-    "poster": "https://via.placeholder.com/150x225?text=Fight+Club",
-    "emotions": [
-      {"name": "Anger", "score": 8},
-      {"name": "Rebellion", "score": 9},
-      {"name": "Discomfort", "score": 7}
-    ]
-  },
-  {
-    "id": 11,
-    "name": "Interstellar",
-    "year": 2014,
-    "description": "A team of explorers travel through a wormhole in space in an attempt to ensure humanity's survival.",
-    "poster": "https://via.placeholder.com/150x225?text=Interstellar",
-    "emotions": [
-      {"name": "Wonder", "score": 10},
-      {"name": "Love", "score": 9},
-      {"name": "Loneliness", "score": 8}
-    ]
-  },
-  {
-    "id": 12,
-    "name": "Casablanca",
-    "year": 1942,
-    "description": "A cynical American expatriate meets a former lover, with unforeseen complications.",
-    "poster": "https://via.placeholder.com/150x225?text=Casablanca",
-    "emotions": [
-      {"name": "Romance", "score": 10},
-      {"name": "Sacrifice", "score": 9},
-      {"name": "Nostalgia", "score": 8}
-    ]
-  },
-  {
-    "id": 13,
-    "name": "The Silence of the Lambs",
-    "year": 1991,
-    "description": "A young F.B.I. cadet must receive the help of an incarcerated and manipulative cannibal killer.",
-    "poster": "https://via.placeholder.com/150x225?text=Silence+Lambs",
-    "emotions": [
-      {"name": "Fear", "score": 10},
-      {"name": "Tension", "score": 10},
-      {"name": "Suspense", "score": 9}
-    ]
-  },
-  {
-    "id": 14,
-    "name": "The Departed",
-    "year": 2006,
-    "description": "An undercover cop and a mole in the police attempt to identify each other.",
-    "poster": "https://via.placeholder.com/150x225?text=Departed",
-    "emotions": [
-      {"name": "Tension", "score": 10},
-      {"name": "Anxiety", "score": 9},
-      {"name": "Deception", "score": 8}
-    ]
-  },
-  {
-    "id": 15,
-    "name": "Gladiator",
-    "year": 2000,
-    "description": "A former Roman General sets out to exact vengeance against the corrupt emperor who murdered his family.",
-    "poster": "https://via.placeholder.com/150x225?text=Gladiator",
-    "emotions": [
-      {"name": "Revenge", "score": 8},
-      {"name": "Honor", "score": 9},
-      {"name": "Courage", "score": 10}
-    ]
-  },
-  {
-    "id": 16,
-    "name": "The Prestige",
-    "year": 2006,
-    "description": "Two stage magicians engage in competitive one-upmanship in an attempt to create the ultimate illusion.",
-    "poster": "https://via.placeholder.com/150x225?text=Prestige",
-    "emotions": [
-      {"name": "Intrigue", "score": 10},
-      {"name": "Shock", "score": 9},
-      {"name": "Obsession", "score": 8}
-    ]
-  },
-  {
-    "id": 17,
-    "name": "Whiplash",
-    "year": 2014,
-    "description": "A promising young drummer enrolls at a cut-throat music conservatory.",
-    "poster": "https://via.placeholder.com/150x225?text=Whiplash",
-    "emotions": [
-      {"name": "Intensity", "score": 10},
-      {"name": "Pressure", "score": 9},
-      {"name": "Passion", "score": 10}
-    ]
-  },
-  {
-    "id": 18,
-    "name": "Good Will Hunting",
-    "year": 1997,
-    "description": "Will Hunting, a janitor at M.I.T., has a gift for mathematics, but needs help from a psychologist.",
-    "poster": "https://via.placeholder.com/150x225?text=Good+Will+Hunting",
-    "emotions": [
-      {"name": "Inspiration", "score": 9},
-      {"name": "Empathy", "score": 10},
-      {"name": "Growth", "score": 9}
-    ]
-  },
-  {
-    "id": 19,
-    "name": "The Shining",
-    "year": 1980,
-    "description": "A family heads to an isolated hotel for the winter where an evil spirit influences the father into violence.",
-    "poster": "https://via.placeholder.com/150x225?text=Shining",
-    "emotions": [
-      {"name": "Dread", "score": 10},
-      {"name": "Isolation", "score": 9},
-      {"name": "Madness", "score": 10}
-    ]
-  },
-  {
-    "id": 20,
-    "name": "La La Land",
-    "year": 2016,
-    "description": "While navigating their careers in Los Angeles, a pianist and an actress fall in love.",
-    "poster": "https://via.placeholder.com/150x225?text=La+La+Land",
-    "emotions": [
-      {"name": "Romance", "score": 9},
-      {"name": "Dreams", "score": 10},
-      {"name": "Nostalgia", "score": 8}
-    ]
-  },
-  {
-    "id": 21,
-    "name": "Django Unchained",
-    "year": 2012,
-    "description": "With the help of a German bounty-hunter, a freed slave sets out to rescue his wife from a brutal Mississippi plantation owner.",
-    "poster": "https://via.placeholder.com/150x225?text=Django",
-    "emotions": [
-      {"name": "Justice", "score": 9},
-      {"name": "Revenge", "score": 8},
-      {"name": "Freedom", "score": 10}
-    ]
-  },
-  {
-    "id": 22,
-    "name": "The Green Mile",
-    "year": 1999,
-    "description": "The lives of guards on Death Row are affected by one of their charges who possesses a mysterious, magical gift.",
-    "poster": "https://via.placeholder.com/150x225?text=Green+Mile",
-    "emotions": [
-      {"name": "Sadness", "score": 10},
-      {"name": "Hope", "score": 8},
-      {"name": "Redemption", "score": 9}
-    ]
-  },
-  {
-    "id": 23,
-    "name": "American History X",
-    "year": 1998,
-    "description": "A former neo-nazi skinhead tries to prevent his younger brother from going down the same wrong path.",
-    "poster": "https://via.placeholder.com/150x225?text=American+History+X",
-    "emotions": [
-      {"name": "Hatred", "score": 8},
-      {"name": "Redemption", "score": 9},
-      {"name": "Regret", "score": 9}
-    ]
-  },
-  {
-    "id": 24,
-    "name": "The Usual Suspects",
-    "year": 1995,
-    "description": "A sole survivor tells of the twisty events leading up to a horrific gun battle on a boat.",
-    "poster": "https://via.placeholder.com/150x225?text=Usual+Suspects",
-    "emotions": [
-      {"name": "Mystery", "score": 10},
-      {"name": "Shock", "score": 10},
-      {"name": "Deception", "score": 9}
-    ]
-  },
-  {
-    "id": 25,
-    "name": "Schindler's List",
-    "year": 1993,
-    "description": "In German-occupied Poland during World War II, industrialist Oskar Schindler gradually becomes concerned for his Jewish workforce.",
-    "poster": "https://via.placeholder.com/150x225?text=Schindlers+List",
-    "emotions": [
-      {"name": "Sorrow", "score": 10},
-      {"name": "Compassion", "score": 10},
-      {"name": "Hope", "score": 8}
-    ]
-  },
-  {
-    "id": 26,
-    "name": "The Lion King",
-    "year": 1994,
-    "description": "Lion prince Simba must reclaim the throne from his uncle Scar.",
-    "poster": "https://via.placeholder.com/150x225?text=Lion+King",
-    "emotions": [
-      {"name": "Joy", "score": 8},
-      {"name": "Loss", "score": 9},
-      {"name": "Courage", "score": 10}
-    ]
-  },
-  {
-    "id": 27,
-    "name": "Spirited Away",
-    "year": 2001,
-    "description": "During her family's move to the suburbs, a sullen 10-year-old girl wanders into a world ruled by gods, witches, and spirits.",
-    "poster": "https://via.placeholder.com/150x225?text=Spirited+Away",
-    "emotions": [
-      {"name": "Wonder", "score": 10},
-      {"name": "Courage", "score": 9},
-      {"name": "Magic", "score": 10}
-    ]
-  },
-  {
-    "id": 28,
-    "name": "Parasite",
-    "year": 2019,
-    "description": "A poor family schemes to become employed by a wealthy family by infiltrating their household.",
-    "poster": "https://via.placeholder.com/150x225?text=Parasite",
-    "emotions": [
-      {"name": "Tension", "score": 9},
-      {"name": "Shock", "score": 10},
-      {"name": "Satire", "score": 8}
-    ]
-  },
-  {
-    "id": 29,
-    "name": "The Godfather Part II",
-    "year": 1974,
-    "description": "The early life and career of Vito Corleone in 1920s New York is portrayed, while his son, Michael, expands the family business.",
-    "poster": "https://via.placeholder.com/150x225?text=Godfather+II",
-    "emotions": [
-      {"name": "Complexity", "score": 10},
-      {"name": "Betrayal", "score": 9},
-      {"name": "Power", "score": 10}
-    ]
-  },
-  {
-    "id": 30,
-    "name": "Apocalypse Now",
-    "year": 1979,
-    "description": "A U.S. Army officer serving in Vietnam is tasked with assassinating a renegade Special Forces Colonel.",
-    "poster": "https://via.placeholder.com/150x225?text=Apocalypse+Now",
-    "emotions": [
-      {"name": "Horror", "score": 9},
-      {"name": "Madness", "score": 10},
-      {"name": "Despair", "score": 8}
-    ]
-  },
-  {
-    "id": 31,
-    "name": "Blade Runner",
-    "year": 1982,
-    "description": "A blade runner must pursue and terminate four replicants who stole a ship in space.",
-    "poster": "https://via.placeholder.com/150x225?text=Blade+Runner",
-    "emotions": [
-      {"name": "Melancholy", "score": 10},
-      {"name": "Existentialism", "score": 9},
-      {"name": "Isolation", "score": 9}
-    ]
-  },
-  {
-    "id": 32,
-    "name": "Oldboy",
-    "year": 2003,
-    "description": "After being kidnapped and imprisoned for fifteen years, Oh Dae-Su is released, only to find that he must find his captor in five days.",
-    "poster": "https://via.placeholder.com/150x225?text=Oldboy",
-    "emotions": [
-      {"name": "Revenge", "score": 10},
-      {"name": "Shock", "score": 10},
-      {"name": "Betrayal", "score": 9}
-    ]
-  },
-  {
-    "id": 33,
-    "name": "City of God",
-    "year": 2002,
-    "description": "In the slums of Rio, two kids' paths diverge as one struggles to become a photographer and the other becomes a drug dealer.",
-    "poster": "https://via.placeholder.com/150x225?text=City+of+God",
-    "emotions": [
-      {"name": "Despair", "score": 9},
-      {"name": "Hope", "score": 7},
-      {"name": "Brutality", "score": 10}
-    ]
-  },
-  {
-    "id": 34,
-    "name": "No Country for Old Men",
-    "year": 2007,
-    "description": "Violence and mayhem ensue after a hunter stumbles upon a drug deal gone wrong.",
-    "poster": "https://via.placeholder.com/150x225?text=No+Country",
-    "emotions": [
-      {"name": "Fear", "score": 10},
-      {"name": "Tension", "score": 10},
-      {"name": "Fate", "score": 9}
-    ]
-  },
-  {
-    "id": 35,
-    "name": "Se7en",
-    "year": 1995,
-    "description": "Two detectives hunt a serial killer who uses the seven deadly sins as his modus operandi.",
-    "poster": "https://via.placeholder.com/150x225?text=Se7en",
-    "emotions": [
-      {"name": "Horror", "score": 10},
-      {"name": "Dread", "score": 10},
-      {"name": "Despair", "score": 9}
-    ]
-  },
-  {
-    "id": 36,
-    "name": "The Sixth Sense",
-    "year": 1999,
-    "description": "A boy who sees dead people seeks help from a child psychologist.",
-    "poster": "https://via.placeholder.com/150x225?text=Sixth+Sense",
-    "emotions": [
-      {"name": "Fear", "score": 8},
-      {"name": "Mystery", "score": 9},
-      {"name": "Shock", "score": 10}
-    ]
-  },
-  {
-    "id": 37,
-    "name": "Memento",
-    "year": 2000,
-    "description": "A man with short-term memory loss attempts to track down his wife's murderer.",
-    "poster": "https://via.placeholder.com/150x225?text=Memento",
-    "emotions": [
-      {"name": "Confusion", "score": 10},
-      {"name": "Intrigue", "score": 10},
-      {"name": "Obsession", "score": 9}
-    ]
-  },
-  {
-    "id": 38,
-    "name": "The Pianist",
-    "year": 2002,
-    "description": "A Polish Jewish musician struggles to survive the destruction of the Warsaw ghetto during WWII.",
-    "poster": "https://via.placeholder.com/150x225?text=Pianist",
-    "emotions": [
-      {"name": "Sorrow", "score": 10},
-      {"name": "Survival", "score": 9},
-      {"name": "Resilience", "score": 9}
-    ]
-  },
-  {
-    "id": 39,
-    "name": "The Grand Budapest Hotel",
-    "year": 2014,
-    "description": "The adventures of Gustave H, a legendary concierge at a famous hotel between the wars.",
-    "poster": "https://via.placeholder.com/150x225?text=Budapest+Hotel",
-    "emotions": [
-      {"name": "Charm", "score": 10},
-      {"name": "Whimsy", "score": 9},
-      {"name": "Nostalgia", "score": 8}
-    ]
-  },
-  {
-    "id": 40,
-    "name": "Inglourious Basterds",
-    "year": 2009,
-    "description": "In Nazi-occupied France, a plan to assassinate Nazi leaders by a group of Jewish U.S. soldiers coincides.",
-    "poster": "https://via.placeholder.com/150x225?text=Basterds",
-    "emotions": [
-      {"name": "Catharsis", "score": 10},
-      {"name": "Tension", "score": 9},
-      {"name": "Satisfaction", "score": 8}
-    ]
-  },
-  {
-    "id": 41,
-    "name": "The Eternal Sunshine of the Spotless Mind",
-    "year": 2004,
-    "description": "When their relationship turns sour, a couple undergoes a medical procedure to have each other erased from their memories.",
-    "poster": "https://via.placeholder.com/150x225?text=Eternal+Sunshine",
-    "emotions": [
-      {"name": "Love", "score": 10},
-      {"name": "Loss", "score": 9},
-      {"name": "Longing", "score": 9}
-    ]
-  },
-  {
-    "id": 42,
-    "name": "12 Angry Men",
-    "year": 1957,
-    "description": "A jury holdout attempts to prevent a miscarriage of justice by forcing his colleagues to reconsider the evidence.",
-    "poster": "https://via.placeholder.com/150x225?text=12+Angry+Men",
-    "emotions": [
-      {"name": "Justice", "score": 10},
-      {"name": "Tension", "score": 9},
-      {"name": "Reason", "score": 9}
-    ]
-  },
-  {
-    "id": 43,
-    "name": "Blade Runner 2049",
-    "year": 2017,
-    "description": "A young blade runner's discovery of a long-buried secret leads him to track down former blade runner Rick Deckard.",
-    "poster": "https://via.placeholder.com/150x225?text=Blade+Runner+2049",
-    "emotions": [
-      {"name": "Melancholy", "score": 10},
-      {"name": "Loneliness", "score": 9},
-      {"name": "Self-discovery", "score": 8}
-    ]
-  },
-  {
-    "id": 44,
-    "name": "Joker",
-    "year": 2019,
-    "description": "During the 1980s, a failed stand-up comedian is driven insane and turns to a life of crime and chaos in Gotham City.",
-    "poster": "https://via.placeholder.com/150x225?text=Joker",
-    "emotions": [
-      {"name": "Despair", "score": 10},
-      {"name": "Anger", "score": 10},
-      {"name": "Isolation", "score": 9}
-    ]
-  },
-  {
-    "id": 45,
-    "name": "Toy Story",
-    "year": 1995,
-    "description": "A cowboy doll is profoundly threatened and jealous when a new spaceman figure supplants him as top toy.",
-    "poster": "https://via.placeholder.com/150x225?text=Toy+Story",
-    "emotions": [
-      {"name": "Joy", "score": 10},
-      {"name": "Jealousy", "score": 7},
-      {"name": "Friendship", "score": 10}
-    ]
-  },
-  {
-    "id": 46,
-    "name": "The Truman Show",
-    "year": 1998,
-    "description": "An insurance salesman discovers his whole life is actually a TV show.",
-    "poster": "https://via.placeholder.com/150x225?text=Truman+Show",
-    "emotions": [
-      {"name": "Disorientation", "score": 9},
-      {"name": "Determination", "score": 10},
-      {"name": "Freedom", "score": 9}
-    ]
-  },
-  {
-    "id": 47,
-    "name": "Requiem for a Dream",
-    "year": 2000,
-    "description": "The drug-induced utopias of four Coney Island people are shattered when their addictions run deep.",
-    "poster": "https://via.placeholder.com/150x225?text=Requiem",
-    "emotions": [
-      {"name": "Despair", "score": 10},
-      {"name": "Dread", "score": 10},
-      {"name": "Hopelessness", "score": 10}
-    ]
-  },
-  {
-    "id": 48,
-    "name": "The Social Network",
-    "year": 2010,
-    "description": "Harvard student Mark Zuckerberg creates the social networking site that would become known as Facebook.",
-    "poster": "https://via.placeholder.com/150x225?text=Social+Network",
-    "emotions": [
-      {"name": "Ambition", "score": 9},
-      {"name": "Betrayal", "score": 8},
-      {"name": "Success", "score": 7}
-    ]
-  },
-  {
-    "id": 49,
-    "name": "Dune",
-    "year": 2021,
-    "description": "Paul Atreides leads a rebellion to restore his family's noble name in a struggle for control of the desert planet Arrakis.",
-    "poster": "https://via.placeholder.com/150x225?text=Dune",
-    "emotions": [
-      {"name": "Awe", "score": 10},
-      {"name": "Destiny", "score": 9},
-      {"name": "Power", "score": 8}
-    ]
-  },
-  {
-    "id": 50,
-    "name": "Everything Everywhere All at Once",
-    "year": 2022,
-    "description": "An aging immigrant is swept up in an insane adventure, where she alone can save what's important.",
-    "poster": "https://via.placeholder.com/150x225?text=Everything+Everywhere",
-    "emotions": [
-      {"name": "Overwhelm", "score": 10},
-      {"name": "Understanding", "score": 9},
-      {"name": "Love", "score": 10}
-    ]
-  },
-  {
-    "id": 51,
-    "name": "Your Name",
-    "year": 2016,
-    "description": "Two teenagers share a profound, magical connection upon discovering they are swapping bodies.",
-    "poster": "https://via.placeholder.com/150x225?text=Your+Name",
-    "emotions": [
-      {"name": "Longing", "score": 10},
-      {"name": "Romance", "score": 10},
-      {"name": "Connection", "score": 9}
-    ]
-  },
-  {
-    "id": 52,
-    "name": "Get Out",
-    "year": 2017,
-    "description": "A young African-American visits his white girlfriend's parents for the weekend.",
-    "poster": "https://via.placeholder.com/150x225?text=Get+Out",
-    "emotions": [
-      {"name": "Dread", "score": 10},
-      {"name": "Paranoia", "score": 9},
-      {"name": "Injustice", "score": 8}
-    ]
-  },
-  {
-    "id": 53,
-    "name": "Mad Max: Fury Road",
-    "year": 2015,
-    "description": "In a post-apocalyptic wasteland, Max helps a rebellion leader escape from a tyrant.",
-    "poster": "https://via.placeholder.com/150x225?text=Mad+Max",
-    "emotions": [
-      {"name": "Adrenaline", "score": 10},
-      {"name": "Freedom", "score": 9},
-      {"name": "Fury", "score": 9}
-    ]
-  },
-  {
-    "id": 54,
-    "name": "Arrival",
-    "year": 2016,
-    "description": "A linguist works with the military to communicate with alien lifeforms after twelve mysterious spacecrafts land.",
-    "poster": "https://via.placeholder.com/150x225?text=Arrival",
-    "emotions": [
-      {"name": "Wonder", "score": 10},
-      {"name": "Time", "score": 9},
-      {"name": "Understanding", "score": 8}
-    ]
-  },
-  {
-    "id": 55,
-    "name": "Drive",
-    "year": 2011,
-    "description": "A mysterious Hollywood stuntman who moonlights as a getaway driver becomes involved in a crime that goes terribly wrong.",
-    "poster": "https://via.placeholder.com/150x225?text=Drive",
-    "emotions": [
-      {"name": "Isolation", "score": 9},
-      {"name": "Tension", "score": 10},
-      {"name": "Violence", "score": 8}
-    ]
-  },
-  {
-    "id": 56,
-    "name": "Moonlight",
-    "year": 2016,
-    "description": "A young African-American man grapples with his identity and sexuality while experiencing the everyday struggles of childhood.",
-    "poster": "https://via.placeholder.com/150x225?text=Moonlight",
-    "emotions": [
-      {"name": "Identity", "score": 10},
-      {"name": "Loneliness", "score": 9},
-      {"name": "Discovery", "score": 9}
-    ]
-  },
-  {
-    "id": 57,
-    "name": "The Revenant",
-    "year": 2015,
-    "description": "A frontiersman on a fur trading expedition fights for survival after being mauled by a bear.",
-    "poster": "https://via.placeholder.com/150x225?text=Revenant",
-    "emotions": [
-      {"name": "Survival", "score": 10},
-      {"name": "Revenge", "score": 9},
-      {"name": "Endurance", "score": 10}
-    ]
-  },
-  {
-    "id": 58,
-    "name": "The Hateful Eight",
-    "year": 2015,
-    "description": "In post-Civil War America, bounty hunters try to find shelter during a blizzard.",
-    "poster": "https://via.placeholder.com/150x225?text=Hateful+Eight",
-    "emotions": [
-      {"name": "Tension", "score": 10},
-      {"name": "Suspicion", "score": 9},
-      {"name": "Distrust", "score": 9}
-    ]
-  },
-  {
-    "id": 59,
-    "name": "Ex Machina",
-    "year": 2014,
-    "description": "A young programmer is selected to participate in a groundbreaking experiment in synthetic intelligence.",
-    "poster": "https://via.placeholder.com/150x225?text=Ex+Machina",
-    "emotions": [
-      {"name": "Awe", "score": 9},
-      {"name": "Paranoia", "score": 10},
-      {"name": "Isolation", "score": 9}
-    ]
-  },
-  {
-    "id": 60,
-    "name": "Kill Bill: Vol. 1",
-    "year": 2003,
-    "description": "After awakening from a four-year coma, a former assassin wreaks vengeance on the team of assassins who betrayed her.",
-    "poster": "https://via.placeholder.com/150x225?text=Kill+Bill",
-    "emotions": [
-      {"name": "Revenge", "score": 10},
-      {"name": "Action", "score": 10},
-      {"name": "Catharsis", "score": 9}
-    ]
-  }
-]
-
+}

@@ -74,7 +74,8 @@ body {
     margin: 0;
     width: 100vw;
     height: 100vh;
-    background-image: url(./images/body_background.jpg);
+    background-image: url(/images/body_background.jpg);
+    overflow: hidden;
 }
 
 .visually-hidden {
@@ -127,10 +128,12 @@ body {
     max-width: 4%;
     flex-grow: 1;
     aspect-ratio: 1 / 1;
+    z-index: 2;
 }
 
 /* main */
 .main {
+    position: relative;
     display: flex;
     width: 100%;
     height: 100%;
@@ -139,6 +142,7 @@ body {
 }
 
 .main__card-container {
+    position: absolute;
     color: aliceblue;
     display: grid;
     grid-template-rows: 5% 5% 1fr 12%;
@@ -150,9 +154,16 @@ body {
     height: 100%;
     grid-area: card;
     border-radius: 20px;
-    background-image: url(./images/card_bg.jpg);
+    background-image: url(/images/card_bg.jpg);
     background-size: auto 100%;
     background-position: center;
+    user-select: none;
+    transition: all 0.5s;
+    touch-action: none;
+    z-index: 5;
+    max-width: 103vw;
+    max-height: 103vh;
+    box-shadow: 10px 10px 20px black;
 }
 
 .movie-title {
