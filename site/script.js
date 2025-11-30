@@ -1,123 +1,167 @@
-let closeButton = document.querySelector('.close-button');
-let openButton = document.querySelector('.show-button');
-let mainContainer = document.querySelector('.main-container');
-let movieList = document.querySelector('.movie-list');
-let loader = document.getElementById('loader');
+document.addEventListener('DOMContentLoaded', () => {
+    const cardContainer = document.querySelector('.main__card-container');
+    const titleElement = document.querySelector('.movie-title');
+    const descriptionElement = document.querySelector('.movie-description');
+    let cardIsDragging = false;
 
-// Movies data and state
-let movies = [];
-let currentPage = 0;
-const moviesPerPage = 20;
-
-// Load movies from JSON file
-async function loadMovies() {
-    try {
-        loader.classList.remove('hidden');
-        const response = await fetch('./movies.json');
-        movies = await response.json();
-        loader.classList.add('hidden');
-        renderMovies(0);
-        setupInfiniteScroll();
-    } catch (error) {
-        loader.textContent = 'Error loading movies. Please refresh the page.';
-        console.error('Error loading movies:', error);
-    }
-}
-
-// Render movies based on page
-function renderMovies(startIndex) {
-    const endIndex = startIndex + moviesPerPage;
-    const moviesToShow = movies.slice(startIndex, endIndex);
-    
-    moviesToShow.forEach(movie => {
-        const movieCard = createMovieCard(movie);
-        movieList.appendChild(movieCard);
-    });
-}
-
-// Create a movie card element
-function createMovieCard(movie) {
-    const card = document.createElement('div');
-    card.className = 'movie-card';
-    
-    // Poster
-    const poster = document.createElement('img');
-    poster.className = 'movie-poster';
-    poster.src = movie.poster;
-    poster.alt = movie.name;
-    poster.onerror = function() {
-        this.src = 'https://via.placeholder.com/150x225?text=No+Image';
-    };
-    
-    // Info section
-    const infoSection = document.createElement('div');
-    infoSection.className = 'movie-info';
-    
-    const title = document.createElement('div');
-    title.className = 'movie-title';
-    title.textContent = `${movie.name} (${movie.year}).dcp`;
-    
-    const description = document.createElement('div');
-    description.className = 'movie-description';
-    description.textContent = movie.description;
-    
-    infoSection.appendChild(title);
-    infoSection.appendChild(description);
-    
-    // Emotions section
-    const emotionsSection = document.createElement('div');
-    emotionsSection.className = 'movie-emotions';
-    
-    movie.emotions.forEach(emotion => {
-        const emotionDiv = document.createElement('div');
-        emotionDiv.className = 'emotion-rating';
-        
-        const nameSpan = document.createElement('span');
-        nameSpan.className = 'emotion-name';
-        nameSpan.textContent = emotion.name + ': ';
-        
-        const scoreSpan = document.createElement('span');
-        scoreSpan.className = 'emotion-score';
-        scoreSpan.textContent = `${emotion.score}/10`;
-        
-        emotionDiv.appendChild(nameSpan);
-        emotionDiv.appendChild(scoreSpan);
-        emotionsSection.appendChild(emotionDiv);
-    });
-    
-    card.appendChild(poster);
-    card.appendChild(infoSection);
-    card.appendChild(emotionsSection);
-    
-    return card;
-}
-
-// Setup infinite scroll
-function setupInfiniteScroll() {
-    movieList.addEventListener('scroll', function() {
-        // Check if scrolled near the bottom (within 100px)
-        const scrollPosition = movieList.scrollTop + movieList.clientHeight;
-        const totalHeight = movieList.scrollHeight;
-        
-        if (scrollPosition >= totalHeight - 100) {
-            // Load next page if there are more movies
-            const nextPageStart = (currentPage + 1) * moviesPerPage;
-            if (nextPageStart < movies.length) {
-                currentPage++;
-                renderMovies(nextPageStart);
+    async function loadMovieData() {
+        try {
+            const response = await fetch('movies.json');
+            const data = await response.json();
+            
+            // Берем первый фильм из массива
+            // Take the first movie from the array
+            if (data.movies && data.movies.length > 0) {
+                const movie = data.movies[0];
+                updateCard(movie);
             }
+        } catch (error) {
+            console.error('Error loading movie data:', error);
         }
-    });
-}
+    }
 
-// Button handlers
-closeButton.addEventListener('click', function () {
-    mainContainer.hidden = true;
+    function updateCard(movie) {
+        // Обновляем заголовок и описание
+        // Update title and description
+        titleElement.textContent = movie.title;
+        descriptionElement.textContent = movie.description;
+
+        // Функция для обновления постера в зависимости от ширины экрана
+        // Function to update poster depending on screen width
+        const updatePoster = () => {
+            // Используем 768px как точку перелома (стандарт для планшетов/мобильных)
+            // Using 768px as a breakpoint
+            const isMobile = window.innerWidth < 768;
+            const posterUrl = isMobile ? movie.vertical_poster : movie.horizontal_poster;
+            
+            // Устанавливаем изображение как фон
+            // Set image as background
+            cardContainer.style.backgroundImage = `url('/images/card_bg.jpg')`;
+        };
+
+        // Устанавливаем постер сразу
+        // Set poster immediately
+        updatePoster();
+
+        // Добавляем слушатель изменения размера окна
+        // Add window resize listener
+        window.addEventListener('resize', updatePoster);
+    }
+
+    loadMovieData();
+
+
+    let isDragging = false;
+    let startX, startY;
+    let initialLeft, initialTop;
+
+    // Вспомогательная функция для получения координат X/Y (неважно, мышь это или тач)
+    const getClientCoords = (e) => {
+        if (e.touches && e.touches.length > 0) {
+            return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        }
+        return { x: e.clientX, y: e.clientY };
+    };
+
+    // 1. START (Начало)
+    const onDragStart = (e) => {
+        // Если это тач-событие, то e.target может быть не тем, если мышь - то e.button === 0 (левая кнопка)
+        // Для простоты считаем любое начало валидным
+        cardContainer.style.transition = 'none';
+        isDragging = true;
+        const coords = getClientCoords(e);
+        startX = coords.x;
+        startY = coords.y;
+
+        initialLeft = cardContainer.offsetLeft;
+        initialTop = cardContainer.offsetTop;
+        
+        cardContainer.style.cursor = 'grabbing';
+    };
+
+
+    let cardTitle = document.querySelector('.movie-title');
+    let cardRatings = document.querySelector('.emotions-rating');
+    let cardDescription = document.querySelector('.movie-description');
+    let cardButtons = document.querySelectorAll('.movie-button-list-item');
+
+    // 2. MOVE (Движение)
+    const onDragMove = (e) => {
+        if (!isDragging) return;
+
+        // Предотвращаем скролл страницы при перетаскивании на телефоне
+        // (важно, иначе браузер будет пытаться прокрутить страницу вместо движения элемента)
+        if (e.cancelable) e.preventDefault(); 
+
+        const coords = getClientCoords(e);
+        const deltaX = coords.x - startX;
+        const deltaY = coords.y - startY;
+        let windowWidth = window.innerWidth;
+        let windowHeight = window.innerHeight;
+
+        cardContainer.style.left = `${initialLeft + deltaX}px`;
+        cardContainer.style.top = `${initialTop + deltaY}px`;
+
+        if (Math.abs(deltaX) >= (windowWidth * 0.1)) {
+                cardContainer.style.opacity = 1*(1-(Math.abs(deltaX)/windowWidth))
+        }
+        
+        if (deltaY > 0) {
+            // увеличение карточки
+            cardContainer.style.width = (80 + (deltaY * 100)/windowHeight) + '%';
+            cardContainer.style.height = 100 + ((deltaY * 100)/windowHeight)*(windowWidth/windowHeight) + '%';
+
+            if (initialLeft + deltaX - deltaY > windowWidth*2/-100) {
+                cardContainer.style.left = `${initialLeft + deltaX - deltaY}px`;
+            } else {
+                cardContainer.style.left = `-1.5vw`
+            };
+
+            if (windowHeight*10/100 - deltaY/2.4 > windowHeight*2/-100) {
+                cardContainer.style.top = `${initialTop - deltaY/2.4}px`;
+            } else {
+                cardContainer.style.top = `-10vh`;
+            };
+
+            // сокрытие информации
+            cardRatings.style.opacity = 1 - ((deltaY * 100)/windowHeight)*0.05;
+            cardDescription.style.opacity = 1 - ((deltaY * 100)/windowHeight)*0.05;
+
+            function lower_opacity(val, index) {
+                val.style.opacity = 1 - ((deltaY * 100)/windowHeight)*0.05;
+            }
+            cardButtons.forEach(lower_opacity)
+        }
+    };
+
+    // 3. END (Конец)
+    const onDragEnd = () => {
+        if (isDragging) {
+            isDragging = false;
+            cardContainer.style.left = 'initial';
+            cardContainer.style.top = 'initial';
+            cardContainer.style.cursor = 'grab';
+            cardContainer.style.opacity = 1;
+            cardContainer.style.width = "80%";
+            cardContainer.style.height = "100%";
+            cardRatings.style.opacity = 1;
+            cardDescription.style.opacity = 1;
+            function rise_opacity(val, index) {
+                val.style.opacity = 1;
+            }
+            cardButtons.forEach(rise_opacity);
+        }
+    };
+
+    // Мышь (Desktop)
+    cardContainer.addEventListener('mousedown', onDragStart);
+    document.addEventListener('mousemove', onDragMove);
+    document.addEventListener('mouseup', onDragEnd);
+
+    // Сенсор (Mobile)
+    // passive: false нужно, чтобы работал e.preventDefault() внутри обработчика (блокировка скролла)
+    cardContainer.addEventListener('touchstart', onDragStart, { passive: false });
+    document.addEventListener('touchmove', onDragMove, { passive: false });
+    document.addEventListener('touchend', onDragEnd);
 });
 
-openButton.addEventListener('click', function () {
-    mainContainer.hidden = false;
-});
-
-// Initialize
-loadMovies();
