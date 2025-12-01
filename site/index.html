@@ -20,6 +20,8 @@
         </header>
         <main class="main">
             <section class="main__card-container">
+                <div class="overlay overlay_left"></div>
+                <div class="overlay overlay_right"></div>
                 <section class="movie-info">
                     <h2 class="movie-title">Interstellar</h2>
                     <ul class="emotions-rating">
@@ -49,6 +51,16 @@
                         <button type="button" class='button button-container__no-button glass-button'>no</button>
                     </li>
                 </ul>
+                <section class="additional_info">
+                    <div class="additional_overlay"></div>
+                    <h2 class="additional_info__title"></h2>
+                    <p class="additional_info__director"></p>
+                    <p class="additional_info__description"></p>
+                    <p class="additional_info__cast"></p>
+                    <p class="additional_info__genres"></p>
+                    <p class="additional_info__rating"></p>
+
+                </section>
             </section>
         </main>
         <section class="search">
@@ -60,6 +72,8 @@
             <textarea name="text-search" id="text-search" class='text-search glass-panel'></textarea>
         </section>
     </div>
+    <!-- Using unpkg for the latest version -->
+    <script src="rgbaster.umd.js"></script>
     <script src="script.js" defer></script>
 </body>
 </html>

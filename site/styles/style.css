@@ -5,6 +5,8 @@
     --glass-border: rgba(255, 255, 255, 0.35);
     --glass-highlight: rgba(255, 255, 255, 0.6);
     --glass-shadow: rgba(0, 0, 0, 0.45);
+    /* Used for gradients (rgb components) */
+    --theme-color-rgb: 27, 36, 33;
 }
 
 .glass-panel {
@@ -72,7 +74,7 @@ body {
     position: relative;
     padding: 0;
     margin: 0;
-    width: 100vw;
+    width: 100%;
     height: 100vh;
     background-image: url(/images/body_background.jpg);
     overflow: hidden;
@@ -155,15 +157,78 @@ body {
     grid-area: card;
     border-radius: 20px;
     background-image: url(/images/card_bg.jpg);
-    background-size: auto 100%;
+    background-size: 100% auto;
     background-position: center;
+    background-repeat: no-repeat;
     user-select: none;
     transition: all 0.5s;
     touch-action: none;
     z-index: 5;
-    max-width: 103vw;
-    max-height: 103vh;
     box-shadow: 10px 10px 20px black;
+}
+
+.additional_info {
+    padding-top: 50px;
+    display: none;
+    width: 100%;
+    height: max(200px, fit-content);
+    position: absolute;
+    top: 85%;
+    background: linear-gradient(360deg, 
+        rgba(var(--theme-color-rgb), 1), 
+        rgba(var(--theme-color-rgb), 1), 
+        rgba(var(--theme-color-rgb), 1), 
+        rgba(var(--theme-color-rgb), 1), 
+        rgba(var(--theme-color-rgb), 0.678),  
+        rgba(var(--theme-color-rgb), 0)
+    );
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto;
+    grid-template-areas: 'additional_overlay additional_overlay'
+                         'additional_title additional_director'
+                         'additional_description additional_description'
+                         'additional_cast additional_cast'
+                         'additional_genres additional_rating';
+}
+
+.additional_info__title {
+    grid-area: additional_title;
+}
+
+.additional_info__director {
+    grid-area: additional_director;
+}
+
+.additional_info__description {
+    grid-area: additional_description;
+}
+
+.additional_info__cast {
+    grid-area: additional_cast;
+}
+
+.additional_info__genres {
+    grid-area: additional_genres;
+}
+
+.additional_info__rating {
+    grid-area: additional_rating;
+}
+
+.overlay {
+    position: absolute;
+    width: 8%;
+    height: 100%;
+    background: linear-gradient(90deg, rgba(var(--theme-color-rgb), 1), rgba(var(--theme-color-rgb), 0.4), rgba(var(--theme-color-rgb), 0));
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+}
+
+.overlay_left {
+    right: 0;
+    background: linear-gradient(-90deg, rgba(var(--theme-color-rgb), 1), rgba(var(--theme-color-rgb), 0.4), rgba(var(--theme-color-rgb), 0));
 }
 
 .movie-title {
