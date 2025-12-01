@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Устанавливаем изображение как фон
             // Set image as background
-            const img = '/images/card_bg.jpg'
+            const img = '/site/images/card_bg.jpg'
             cardContainer.style.backgroundImage = `url(${img})`;
 
             // Проверяем наличие библиотеки (имя может быть rgbaster или RGBaster)

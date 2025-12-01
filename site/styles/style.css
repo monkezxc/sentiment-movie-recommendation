@@ -76,7 +76,7 @@ body {
     margin: 0;
     width: 100%;
     height: 100vh;
-    background-image: url(/images/body_background.jpg);
+    background-image: url(/site/images/body_background.jpg);
     overflow: hidden;
 }
 
@@ -156,7 +156,7 @@ body {
     height: 100%;
     grid-area: card;
     border-radius: 20px;
-    background-image: url(/images/card_bg.jpg);
+    background-image: url(site/images/card_bg.jpg);
     background-size: 100% auto;
     background-position: center;
     background-repeat: no-repeat;
