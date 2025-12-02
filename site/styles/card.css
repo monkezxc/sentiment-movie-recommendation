@@ -1,0 +1,256 @@
+/* Movie Card Container */
+.main__card-container {
+    position: absolute;
+    color: var(--text-primary);
+    display: grid;
+    grid-template-rows: 5% 5% 1fr 12%;
+    grid-template-areas: 
+        'title'
+        'rating'
+        'description'
+        'buttons';
+    width: 80%;
+    height: 100%;
+    grid-area: card;
+    border-radius: 20px;
+    background-image: var(--bg-card-image);
+    background-size: 100% auto;
+    background-position: center;
+    background-repeat: no-repeat;
+    user-select: none;
+    transition: all 1s;
+    touch-action: none;
+    z-index: var(--z-card);
+    box-shadow: 10px 10px 20px black;
+}
+
+@media (width <= 1130px) {
+    .main__card-container {
+        background-size: auto 100%;
+    }
+}
+
+/* Gradient Overlays */
+.main__card-container::after, .main__card-container::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    border-radius: inherit;
+    height: 50%;
+    background: linear-gradient(360deg, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0));
+    z-index: -1;
+    opacity: 1;
+    transition: opacity 0.5s;
+}
+
+.main__card-container::before {
+    top: 0;
+    height: 20%;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0));
+}
+
+/* Card Open State */
+.is-open::after, .is-open::before {
+    opacity: 0;
+}
+
+.is-open {
+    user-select: text;
+}
+
+.is-open .close-card-button {
+    display: block;
+}
+
+/* Movie Title */
+.movie-title {
+    display: flex;
+    grid-area: title;
+    justify-content: center;
+}
+
+/* Emotions Rating */
+.emotions-rating {
+    grid-area: rating;
+    list-style: none;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    gap: 3%;
+}
+
+/* Movie Description */
+.movie-description {
+    display: flex;
+    grid-area: description;
+    justify-self: center;
+    align-items: flex-end;
+    text-indent: 2%;
+    text-align: center;
+    width: 90%;
+    margin: 0;
+    font-size: 12px;
+}
+
+@media (width >= 768px) {
+    .movie-description {
+        font-size: 16px
+    }
+}
+
+@media (width >= 1024px) {
+    .movie-description {
+        font-size: 18px
+    }
+}
+
+/* Action Buttons List */
+.movie-button-list {
+    gap: 2%;
+    width: 70%;
+    padding: 0;
+    justify-self: center;
+    list-style: none;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    transform: translateY(-4%);
+    height: 100%;
+    grid-area: buttons;
+}
+
+.movie-button-list-item {
+    width: 20%;
+    height: 70%;
+}
+
+.center-item {
+    width: 40%;
+}
+
+/* Additional Info Section (Expanded Card) */
+.additional_info {
+    box-sizing: border-box;
+    display: none;
+    width: 100%;
+    height: max(200px, fit-content);
+    position: absolute;
+    top: 80%;
+    /* Uses theme color for gradient */
+    background: linear-gradient(360deg, 
+        rgba(var(--theme-color-rgb), 1), 
+        rgba(var(--theme-color-rgb), 1), 
+        rgba(var(--theme-color-rgb), 1), 
+        rgba(var(--theme-color-rgb), 1), 
+        rgba(var(--theme-color-rgb), 0.678),  
+        rgba(var(--theme-color-rgb), 0)
+    );
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto;
+    grid-template-areas: 
+        'additional_title additional_director'
+        'additional_description additional_description'
+        'additional_cast additional_cast'
+        'additional_genres additional_rating';
+    font-size: 20px;
+    padding: 0 15px 0 15px;
+}
+
+.additional_info__item {
+    margin-top: 18px;
+}
+
+.additional_info__item:first-child {
+    margin-top: 0;
+}
+
+/* Additional Info Typography */
+.additional_info__title {
+    grid-area: additional_title;
+    font-size: 64px;
+    display: flex;
+    align-items: baseline;
+}
+
+.movie-year {
+    font-size: 40px;
+    font-weight: 400;
+    margin-left: 10px;
+}
+
+.additional_info__director {
+    box-sizing: border-box;
+    grid-area: additional_director;
+    font-size: 45px;
+    font-weight: 700;
+    justify-self: end;
+    display: flex;
+    align-items: last baseline;
+    padding-bottom: 2.5%;
+}
+
+.additional_info__director::before {
+    content: 'Режиссёр: ';
+    font-size: 30px;
+    font-weight: 400;
+    margin-right: 10px;
+}
+
+.additional_info__description {
+    grid-area: additional_description;
+    font-size: 32px;
+}
+
+.additional_info__cast {
+    grid-area: additional_cast;
+    font-size: 32px;
+}
+
+.additional_info__cast::before {
+    content: 'Актеры: ';
+    font-weight: 700;
+    font-size: 36px;
+}
+
+.additional_info__genres {
+    grid-area: additional_genres;
+    font-size: 32px;
+}
+
+.additional_info__genres::before {
+    content: 'Жанр: ';
+    font-weight: 700;
+    font-size: 36px;
+}
+
+.additional_info__rating {
+    grid-area: additional_rating;
+    font-size: 32px;
+}
+
+.additional_info__rating::before {
+    content: 'Рейтинг: ';
+    font-weight: 700;
+    font-size: 36px;
+}
+
+/* Overlays */
+.overlay {
+    position: absolute;
+    width: 8%;
+    height: 120%;
+    background: linear-gradient(90deg, rgba(var(--theme-color-rgb), 1), rgba(var(--theme-color-rgb), 0.4), rgba(var(--theme-color-rgb), 0));
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+}
+
+.overlay_left {
+    right: 0;
+    background: linear-gradient(-90deg, rgba(var(--theme-color-rgb), 1), rgba(var(--theme-color-rgb), 0.4), rgba(var(--theme-color-rgb), 0));
+}
+

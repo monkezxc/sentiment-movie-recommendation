@@ -1,0 +1,82 @@
+/* Global Reset & Body */
+body {
+    position: relative;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+    height: 100vh;
+    background-image: var(--bg-body-image);
+    overflow: hidden;
+    font-family: var(--font-main);
+}
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    border: 0;
+    padding: 0;
+    white-space: nowrap;
+    clip-path: inset(100%);
+    clip: rect(0 0 0 0);
+    overflow: hidden;
+}
+
+/* Main Grid Layout */
+.main-container {
+    display: grid;
+    grid-template-rows: 10% 1fr 20%;
+    grid-template-areas: 
+        "header"
+        "card"
+        "search";
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+}
+
+/* Header */
+.header {
+    position: relative;
+    grid-area: header;
+    box-sizing: border-box;
+    padding: 2.5%;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header__button {
+    box-sizing: border-box;
+    display: flex;
+    min-width: 35px;
+    max-width: 4%;
+    flex-grow: 1;
+    aspect-ratio: 1 / 1;
+    z-index: var(--z-header);
+}
+
+/* Main Content Area */
+.main {
+    position: relative;
+    display: flex;
+    width: 100%;
+    height: 100%;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Search Area */
+.search {
+    grid-area: search;
+    display: flex;
+    box-sizing: border-box;
+    justify-content: space-between;
+    align-items: flex-end;
+    width: 100%;
+    justify-self: center;
+    padding: 2% 2.5% 1.5% 2.5%;
+}
+

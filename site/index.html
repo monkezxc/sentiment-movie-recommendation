@@ -4,7 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VibeMovie</title>
-    <link rel="stylesheet" href="/site/styles/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Jura:wght@300..700&family=Nata+Sans:wght@100..900&family=Unbounded:wght@200..900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/site/styles/variables.css">
+    <link rel="stylesheet" href="/site/styles/layout.css">
+    <link rel="stylesheet" href="/site/styles/ui.css">
+    <link rel="stylesheet" href="/site/styles/card.css">
 </head>
 <body>
     <div class="main-container">
@@ -20,6 +26,7 @@
         </header>
         <main class="main">
             <section class="main__card-container">
+                <button type="button" class="close-card-button"></button>
                 <div class="overlay overlay_left"></div>
                 <div class="overlay overlay_right"></div>
                 <section class="movie-info">
@@ -55,10 +62,10 @@
                     <div class="additional_overlay"></div>
                     <h2 class="additional_info__title"></h2>
                     <p class="additional_info__director"></p>
-                    <p class="additional_info__description"></p>
-                    <p class="additional_info__cast"></p>
-                    <p class="additional_info__genres"></p>
-                    <p class="additional_info__rating"></p>
+                    <p class="additional_info__item additional_info__description"></p>
+                    <p class="additional_info__item additional_info__cast"></p>
+                    <p class="additional_info__item additional_info__genres"></p>
+                    <p class="additional_info__item additional_info__rating"></p>
 
                 </section>
             </section>
