@@ -1,170 +1,362 @@
-/**
- * VibeMovie - Main Script
- * Refactored for modularity and performance
- */
-
 document.addEventListener('DOMContentLoaded', () => {
-    // --- Configuration & State ---
-    const CONFIG = {
-        selectors: {
-            cardContainer: '.main__card-container',
-            title: '.movie-title',
-            description: '.movie-description',
-            ratings: '.emotions-rating',
-            buttons: '.movie-button-list-item',
-            closeBtn: '.close-card-button',
-            moreBtn: '.button-container__more-button',
-            overlay: '.overlay',
-            // Additional Info
-            addInfo: '.additional_info',
-            addInfoTitle: '.additional_info__title',
-            addInfoDirector: '.additional_info__director',
-            addInfoDesc: '.additional_info__description',
-            addInfoCast: '.additional_info__cast',
-            addInfoGenres: '.additional_info__genres',
-            addInfoRating: '.additional_info__rating',
-        },
-        breakpoints: {
-            mobile: 768
-        }
-    };
-
+    // Управление состоянием приложения
     const state = {
-        cardOpen: false,
+        movies: [],
+        currentIndex: 0,
+        isAnimating: false,
         isDragging: false,
         startX: 0,
         startY: 0,
+        currentCard: null,
+        cardOpen: false,
         initialLeft: 0,
         initialTop: 0,
         startWidth: 0,
         startHeight: 0,
-        movieData: null
+        width: window.innerWidth,
     };
 
-    // --- DOM Elements Cache ---
-    const elements = {};
-    for (const [key, selector] of Object.entries(CONFIG.selectors)) {
-        // Handle NodeList for multiple elements
-        if (['overlay', 'buttons'].includes(key)) {
-             elements[key] = document.querySelectorAll(selector);
-        } else {
-             elements[key] = document.querySelector(selector);
-        }
-    }
-    const body = document.body;
+    // DOM элементы
+    const wrapper = document.querySelector('.cards-wrapper');
     const root = document.documentElement;
 
-    // --- Helpers ---
+    // Вспомогательная функция линейной интерполяции (для анимации)
     const lerp = (start, end, t) => start * (1 - t) + end * t;
     
-    const getClientCoords = (e) => {
-        if (e.touches && e.touches.length > 0) {
-            return { x: e.touches[0].clientX, y: e.touches[0].clientY };
-        }
-        return { x: e.clientX, y: e.clientY };
-    };
+    init();
 
-    // --- Logic ---
-
+    // Инициализация: загрузка данных фильмов
     async function init() {
         await loadMovieData();
-        setupEventListeners();
     }
 
+    // Загрузка списка фильмов из JSON файла
     async function loadMovieData() {
         try {
             const response = await fetch('movies.json');
             const data = await response.json();
-            if (data.movies?.length > 0) {
-                state.movieData = data.movies[0];
-                updateCardUI(state.movieData);
+            if (data.movies && data.movies.length > 0) {
+                state.movies = data.movies;
+                renderInitialStack();
             }
         } catch (error) {
             console.error('Failed to load movie data:', error);
         }
     }
 
-    function updateCardUI(movie) {
-        // Main Card Info
-        elements.title.textContent = movie.title;
-        elements.description.textContent = movie.description;
-
-        // Additional Info
-        elements.addInfoTitle.innerHTML = `${movie.title} <span class="movie-year">(${movie.release_year})</span>`;
-        elements.addInfoDirector.textContent = movie.director;
-        elements.addInfoDesc.textContent = movie.description;
-        elements.addInfoCast.textContent = movie.actors;
-        elements.addInfoGenres.textContent = movie.genre;
-        elements.addInfoRating.textContent = movie.rating;
-
-        updatePoster();
-    }
-
-    async function updatePoster() {
-        if (!state.movieData) return;
-        
-        // const isMobile = window.innerWidth < CONFIG.breakpoints.mobile;
-        // Logic preserved from original: always use card_bg.jpg for background
-        // (Original code had unused posterUrl logic unless strictly for bg image which was hardcoded)
-        
-        const imgPath = '/site/images/card_bg.jpg';
-        elements.cardContainer.style.backgroundImage = `url(${imgPath})`;
-
-        // Color extraction
-        const analyze = window.rgbaster || window.RGBaster;
-        if (analyze) {
-            try {
-                const result = await analyze(imgPath, { ignore: ['rgb(255,255,255)'] });
-                if (result?.[0]?.color) {
-                    const match = result[0].color.match(/\d+,\s*\d+,\s*\d+/);
-                    if (match) {
-                        root.style.setProperty('--theme-color-rgb', match[0]);
-                    }
-                }
-            } catch (e) {
-                console.error('RGBaster error:', e);
-            }
-        } else {
-            console.warn('RGBaster not defined');
+    // Отрисовка начального стека карт (активная и следующая)
+    function renderInitialStack() {
+        if (state.movies[0]) {
+            createAndAppendCard(0, 'active');
+        }
+        if (state.movies[1]) {
+            createAndAppendCard(1, 'next');
         }
     }
 
-    // --- Drag & Animation Logic ---
+    // Создание и добавление DOM-элемента карты
+    function createAndAppendCard(index, type) {
+        if (index >= state.movies.length) return;
+        // проверка на ширину экрана для выбора постера
+        const isMobile = state.width <= 456;
+        
+        const movie = state.movies[index];
+        
+        const template = document.getElementById('movie-card-template');
+        const clone = template.content.cloneNode(true);
+        const card = clone.querySelector('.card');
+        
+        card.classList.add(type);
+        card.dataset.index = index;
 
-    function openCard(animated = false) {
+        const bgImage = isMobile ? movie.vertical_poster : movie.horizontal_poster;
+        card.style.backgroundImage = `url(${bgImage})`;
+
+        const id = movie.id;
+
+        card.querySelector('.movie-title').textContent = movie.title;
+        card.querySelector('.movie-description').textContent = movie.description;
+        
+        card.querySelector('.additional_info__title').innerHTML = `${movie.title} <span class="movie-year">(${movie.release_year})</span>`;
+        card.querySelector('.additional_info__director').textContent = movie.director;
+        
+        card.querySelector('.additional_info__description').textContent = movie.description;
+        card.querySelector('.additional_info__cast').textContent = movie.actors;
+        card.querySelector('.additional_info__genres').textContent = movie.genre;
+        card.querySelector('.additional_info__rating').textContent = movie.rating;
+
+        wrapper.appendChild(card);
+
+        extractColors(bgImage, card);
+
+        setupCardEvents(card);
+    }
+
+    // Извлечение доминантного цвета из изображения
+    async function extractColors(imagePath, cardElement) {
+        const analyze = window.rgbaster || window.RGBaster;
+        if (!analyze) return;
+
+        try {
+            const result = await analyze(imagePath, { ignore: ['rgb(255,255,255)'] });
+            if (result?.[0]?.color) {
+                const match = result[0].color.match(/\d+,\s*\d+,\s*\d+/);
+                if (match) {
+                    cardElement.style.setProperty('--theme-color-rgb', match[0]);
+                }
+            }
+        } catch (e) {
+        }
+    }
+
+    // Настройка обработчиков событий для карты
+    function setupCardEvents(card) {
+        const yesBtn = card.querySelector('[data-action="yes"]');
+        const noBtn = card.querySelector('[data-action="no"]');
+        const moreBtn = card.querySelector('[data-action="more"]');
+        const closeBtn = card.querySelector('.close-card-button');
+
+        // обработка кнопок 'Да' и 'Нет'
+        if (yesBtn) yesBtn.addEventListener('click', (e) => { e.stopPropagation(); handleVoteLogic('yes'); });
+        if (noBtn) noBtn.addEventListener('click', (e) => { e.stopPropagation(); handleVoteLogic('no'); });
+        
+        if (moreBtn) moreBtn.addEventListener('click', (e) => { 
+            e.stopPropagation(); 
+            openCard(card, true); 
+        });
+
+        if (closeBtn) closeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            closeCard(card);
+        });
+
+        // обработка касаний для свайпов
+        card.addEventListener('mousedown', handleDragStart);
+        card.addEventListener('touchstart', handleDragStart, { passive: false });
+    }
+
+    // Логика голосования (лайк/дизлайк)
+    function handleVoteLogic(decision) {
+        if (state.isAnimating) return;
+        
+        const activeCard = wrapper.querySelector('.card.active');
+        if (!activeCard) return;
+
+        state.isAnimating = true;
+
+        const exitClass = decision === 'yes' ? 'exit-right' : 'exit-left';
+        activeCard.classList.add(exitClass);
+        activeCard.classList.remove('active');
+
+        const nextCard = wrapper.querySelector('.card.next');
+        if (nextCard) {
+            nextCard.classList.remove('next');
+            nextCard.classList.add('active');
+            nextCard.style.transform = ''; 
+        }
+
+        state.currentIndex++; 
+        const nextNextIndex = state.currentIndex + 1;
+        
+        createAndAppendCard(nextNextIndex, 'next');
+
+        setTimeout(() => {
+            activeCard.remove();
+            state.isAnimating = false;
+        }, 500);
+    }
+
+    // Начало перетаскивания карты
+    function handleDragStart(e) {
+        const card = e.currentTarget;
+        if (!card.classList.contains('active') || state.cardOpen) return;
+
+        state.isDragging = true;
+        state.currentCard = card;
+        state.startX = getClientX(e);
+        state.startY = getClientY(e);
+        
+        state.initialLeft = card.offsetLeft;
+        state.initialTop = card.offsetTop;
+        state.startWidth = card.offsetWidth;
+        state.startHeight = card.offsetHeight;
+
+        card.style.transition = 'none';
+    }
+
+    // Обработка перемещения карты
+    function handleDragMove(e) {
+        if (!state.isDragging || !state.currentCard) return;
+        
+        const currentX = getClientX(e);
+        const currentY = getClientY(e);
+        
+        const deltaX = currentX - state.startX;
+        const deltaY = currentY - state.startY;
+        const winW = window.innerWidth;
+        const winH = window.innerHeight;
+
+        // плавное увеличение прозрачности в зависимости от расстояния от центра
+        if (!state.cardOpen) {
+             state.currentCard.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+
+             if (Math.abs(deltaX) >= (winW * 0.1)) {
+                state.currentCard.style.opacity = (1.1 - (Math.abs(deltaX) / winW));
+             }
+        }
+
+        // логика открытия карточки свайпом вниз
+        if (deltaY > 0) {
+            const triggerHeight = winH / 5;
+            
+            // если достигаем определенной точки, открываем карточку
+            if (deltaY > triggerHeight) {
+                openCard(state.currentCard, false);
+                state.isDragging = false;
+                return;
+            }
+
+            if (!state.cardOpen) {
+                // считаем прогресс перемещения вниз
+                const progress = Math.min(deltaY / triggerHeight, 1);
+                
+                const currentW = lerp(state.startWidth, winW, progress);
+                const currentH = lerp(state.startHeight, winH, progress);
+                
+                state.currentCard.style.width = `${currentW}px`;
+                state.currentCard.style.height = `${currentH}px`;
+
+                state.currentCard.style.transform = 'none'; 
+                
+                const dragLeft = state.initialLeft + deltaX;
+                
+                const currentLeft = lerp(dragLeft, 0, progress);
+                
+                // плавное открытие карточки
+                state.currentCard.style.left = `${currentLeft}px`;
+                state.currentCard.style.top = `${state.initialTop - deltaY/1.8}px`;
+
+                state.currentCard.style.borderRadius = `${lerp(20, 0, progress)}px`;
+
+                const opacity = 1 - progress;
+                const ratings = state.currentCard.querySelector('.emotions-rating');
+                const description = state.currentCard.querySelector('.movie-description');
+                const title = state.currentCard.querySelector('.movie-title');
+                const buttons = state.currentCard.querySelectorAll('.movie-button-list-item');
+
+                if(ratings) ratings.style.opacity = opacity;
+                if(description) description.style.opacity = opacity;
+                if(title) title.style.opacity = opacity;
+                buttons.forEach(btn => btn.style.opacity = opacity);
+            }
+        } else {
+            // если движение вниз не происходит, размеры карточки фиксированные
+            state.currentCard.style.width = '80%';
+            state.currentCard.style.height = '100%';
+            state.currentCard.style.borderRadius = '20px';
+        }
+    }
+
+    // Завершение перетаскивания
+    function handleDragEnd(e) {
+        if (!state.isDragging || !state.currentCard) return;
+
+        const card = state.currentCard;
+        const deltaX = getClientX(e) - state.startX;
+
+        // возврат к стандартным значениям в css файле
+        if (!state.cardOpen) {
+            state.isDragging = false;
+            
+            card.style.transition = 'all 0.5s ease-in-out';
+            card.style.transform = '';
+            card.style.width = '';
+            card.style.height = '';
+            card.style.left = '';
+            card.style.top = '';
+            card.style.borderRadius = '';
+            card.style.opacity = '1';
+            
+            const elementsToRestore = card.querySelectorAll('.emotions-rating, .movie-description, .movie-title, .movie-button-list-item');
+            elementsToRestore.forEach(el => el.style.opacity = '1');
+
+            const threshold = window.innerWidth * 0.25;
+            if (Math.abs(deltaX) > threshold) {
+                handleVoteLogic(deltaX > 0 ? 'yes' : 'no');
+            }
+        } else {
+            state.isDragging = false;
+        }
+    }
+
+    // Глобальные обработчики событий ввода
+    document.addEventListener('mousemove', handleDragMove);
+    document.addEventListener('mouseup', handleDragEnd);
+    document.addEventListener('touchmove', handleDragMove, { passive: false });
+    document.addEventListener('touchend', handleDragEnd);
+
+    // Получение координаты X из события мыши или касания
+    function getClientX(e) {
+        if (e.changedTouches && e.changedTouches.length > 0) {
+            return e.changedTouches[0].clientX;
+        }
+        if (e.touches && e.touches.length > 0) {
+            return e.touches[0].clientX;
+        }
+        return e.clientX;
+    }
+
+    // Получение координаты Y из события мыши или касания
+    function getClientY(e) {
+        if (e.changedTouches && e.changedTouches.length > 0) {
+            return e.changedTouches[0].clientY;
+        }
+        if (e.touches && e.touches.length > 0) {
+            return e.touches[0].clientY;
+        }
+        return e.clientY;
+    }
+
+    // Открытие карты на весь экран
+    function openCard(card, animated = false) {
         state.cardOpen = true;
-        elements.cardContainer.classList.add('is-open');
+        card.classList.add('is-open');
 
-        const { cardContainer, ratings, description, title, buttons, addInfo, overlay } = elements;
+        const ratings = card.querySelector('.emotions-rating');
+        const description = card.querySelector('.movie-description');
+        const title = card.querySelector('.movie-title');
+        const buttons = card.querySelectorAll('.movie-button-list-item'); 
+        const addInfo = card.querySelector('.additional_info');
+        const overlay = card.querySelectorAll('.overlay'); 
+
         const transitionMain = 'opacity 0.5s ease-in-out';
 
         if (animated) {
-            // Capture current state for smooth transition
-            const rect = cardContainer.getBoundingClientRect();
+            const rect = card.getBoundingClientRect();
             
-            // Fix position momentarily
-            Object.assign(cardContainer.style, {
+            Object.assign(card.style, {
                 transition: 'none',
                 position: 'fixed',
                 left: `${rect.left}px`,
                 top: `${rect.top}px`,
                 width: `${rect.width}px`,
                 height: `${rect.height}px`,
-                borderRadius: getComputedStyle(cardContainer).borderRadius
+                borderRadius: getComputedStyle(card).borderRadius,
+                transform: 'none',
+                zIndex: '1000' 
             });
 
-            // Force reflow
-            cardContainer.offsetHeight;
+            card.offsetHeight;
 
-            // Enable transition
-            cardContainer.style.transition = 'all .5s ease-in-out';
+            card.style.transition = 'all .5s ease-in-out';
             
-            [ratings, description, title].forEach(el => el.style.transition = transitionMain);
+            if(ratings) ratings.style.transition = transitionMain;
+            if(description) description.style.transition = transitionMain;
+            if(title) title.style.transition = transitionMain;
             buttons.forEach(btn => btn.style.transition = transitionMain);
         }
 
-        // Apply Final State
-        Object.assign(cardContainer.style, {
+        Object.assign(card.style, {
             position: 'fixed',
             borderRadius: '0',
             width: '100%',
@@ -173,213 +365,82 @@ document.addEventListener('DOMContentLoaded', () => {
             left: '0',
             opacity: '1',
             transform: 'none',
-            cursor: 'default'
+            cursor: 'default',
+            zIndex: '1000'
         });
 
-        // Scroll handling
         const enableScroll = () => {
-            cardContainer.style.overflowY = 'auto';
-            body.style.overflow = 'hidden';
+            card.style.overflowY = 'auto';
+            document.body.style.overflow = 'hidden';
         };
         
         if (animated) setTimeout(enableScroll, 500);
         else enableScroll();
 
-        // Hide Main Content
-        [ratings, description, title].forEach(el => el.style.opacity = '0');
+        // скрываем данные, указанные на закрытой карточке
+        if(ratings) ratings.style.opacity = '0';
+        if(description) description.style.opacity = '0';
+        if(title) title.style.opacity = '0';
         buttons.forEach(btn => btn.style.opacity = '0');
 
-        // Show Additional Info
         const showAdditional = () => {
-            addInfo.style.opacity = '0';
-            addInfo.style.display = 'grid';
-            
-            requestAnimationFrame(() => {
-                addInfo.style.opacity = '1';
-                overlay.forEach(el => el.style.opacity = '1');
-            });
+            if (addInfo) {
+                addInfo.style.opacity = '0';
+                addInfo.style.display = 'grid';
+                
+                requestAnimationFrame(() => {
+                    addInfo.style.opacity = '1';
+                    overlay.forEach(el => el.style.opacity = '1');
+                });
+            }
         };
 
         if (animated) setTimeout(showAdditional, 500);
         else showAdditional();
     }
 
-    function closeCard() {
+    // Закрытие карты и возврат в стек
+    function closeCard(card) {
         state.cardOpen = false;
-        elements.cardContainer.classList.remove('is-open');
-        const { cardContainer, ratings, description, title, buttons, addInfo, overlay } = elements;
+        card.classList.remove('is-open');
 
-        // Reset Container Styles
-        Object.assign(cardContainer.style, {
+        const ratings = card.querySelector('.emotions-rating');
+        const description = card.querySelector('.movie-description');
+        const title = card.querySelector('.movie-title');
+        const buttons = card.querySelectorAll('.movie-button-list-item');
+        const addInfo = card.querySelector('.additional_info');
+        const overlay = card.querySelectorAll('.overlay');
+
+        Object.assign(card.style, {
             transition: 'all 0.5s ease-in-out',
             position: '', left: '', top: '', width: '', height: '',
             borderRadius: '', transform: '', cursor: 'grab', opacity: '1',
-            overflowY: ''
+            overflowY: '', zIndex: ''
         });
         
-        body.style.overflow = '';
+        document.body.style.overflow = '';
 
-        // Transition Timings
         const mainTransition = 'opacity 0.8s ease-in-out 0.3s';
         const infoTransition = 'opacity 0.2s ease-in-out';
 
-        // Apply transitions
-        [ratings, description, title].forEach(el => el.style.transition = mainTransition);
+        if(ratings) ratings.style.transition = mainTransition;
+        if(description) description.style.transition = mainTransition;
+        if(title) title.style.transition = mainTransition;
         buttons.forEach(btn => btn.style.transition = mainTransition);
         
-        addInfo.style.transition = infoTransition;
+        if(addInfo) addInfo.style.transition = infoTransition;
         overlay.forEach(el => el.style.transition = infoTransition);
 
-        // Restore Visibility
-        [ratings, description, title].forEach(el => el.style.opacity = '1');
+        if(ratings) ratings.style.opacity = '1';
+        if(description) description.style.opacity = '1';
+        if(title) title.style.opacity = '1';
         buttons.forEach(btn => btn.style.opacity = '1');
 
-        // Hide Info
-        addInfo.style.opacity = '0';
+        if(addInfo) addInfo.style.opacity = '0';
         overlay.forEach(el => el.style.opacity = '0');
 
         setTimeout(() => {
-            if (!state.cardOpen) addInfo.style.display = 'none';
+            if (!state.cardOpen && addInfo) addInfo.style.display = 'none';
         }, 500);
     }
-
-    // --- Drag Handlers ---
-
-    function handleDragStart(e) {
-        if (state.cardOpen) return;
-        
-        state.isDragging = true;
-        elements.cardContainer.style.transition = 'none';
-        elements.cardContainer.style.cursor = 'grabbing';
-
-        const coords = getClientCoords(e);
-        state.startX = coords.x;
-        state.startY = coords.y;
-        state.initialLeft = elements.cardContainer.offsetLeft;
-        state.initialTop = elements.cardContainer.offsetTop;
-        state.startWidth = elements.cardContainer.offsetWidth;
-        state.startHeight = elements.cardContainer.offsetHeight;
-    }
-
-    function handleDragMove(e) {
-        if (!state.isDragging) return;
-        if (e.cancelable) e.preventDefault();
-
-        const coords = getClientCoords(e);
-        const deltaX = coords.x - state.startX;
-        const deltaY = coords.y - state.startY;
-        const winW = window.innerWidth;
-        const winH = window.innerHeight;
-
-        // Horizontal Move (Fade out)
-        if (!state.cardOpen) {
-            elements.cardContainer.style.left = `${state.initialLeft + deltaX}px`;
-            elements.cardContainer.style.top = `${state.initialTop + deltaY}px`;
-            
-            if (Math.abs(deltaX) >= (winW * 0.1)) {
-                elements.cardContainer.style.opacity = (1.1 - (Math.abs(deltaX) / winW));
-            }
-        }
-
-        // Vertical Move (Expand)
-        if (deltaY > 0) {
-            const triggerHeight = winH / 5;
-            if (deltaY > triggerHeight) {
-                openCard(false);
-                state.isDragging = false; // Stop custom dragging, switch to open state
-                return;
-            }
-
-            if (!state.cardOpen) {
-                const progress = Math.min(deltaY / triggerHeight, 1);
-                
-                // Interpolate Dimensions
-                const currentW = lerp(state.startWidth, winW, progress);
-                const currentH = lerp(state.startHeight, winH, progress);
-                
-                elements.cardContainer.style.width = `${currentW}px`;
-                elements.cardContainer.style.height = `${currentH}px`;
-
-                // Interpolate Position
-                const dragLeft = state.initialLeft + deltaX;
-                const dragTop = state.initialTop; 
-                
-                const currentLeft = lerp(dragLeft, 0, progress);
-                const currentTop = lerp(dragTop, 0, progress); 
-                
-                elements.cardContainer.style.left = `${currentLeft}px`;
-                elements.cardContainer.style.top = `${currentTop - deltaY/1.8}px`;
-
-                // Interpolate Radius
-                elements.cardContainer.style.borderRadius = `${lerp(20, 0, progress)}px`;
-
-                // Interpolate Opacity of Content
-                const opacity = 1 - progress;
-                [elements.ratings, elements.description, elements.title].forEach(el => el.style.opacity = opacity);
-                elements.buttons.forEach(btn => btn.style.opacity = opacity);
-            }
-        }
-    }
-
-    function handleDragEnd() {
-        if (!state.isDragging) return;
-
-        if (!state.cardOpen) {
-            state.isDragging = false;
-            elements.cardContainer.classList.remove('is-open');
-            
-            // Reset all inline styles modified during drag
-            Object.assign(elements.cardContainer.style, {
-                transition: 'all 0.5s',
-                minHeight: 'initial',
-                left: 'initial',
-                top: 'initial',
-                width: '80%',
-                height: '100%',
-                borderRadius: '20px', 
-                overflowX: 'initial',
-                overflowY: 'initial',
-                cursor: 'grab',
-                opacity: '1'
-            });
-
-            // Restore content opacity
-            [elements.ratings, elements.description, elements.title].forEach(el => el.style.opacity = '1');
-            elements.buttons.forEach(btn => btn.style.opacity = '1');
-        } else {
-            state.isDragging = false;
-            elements.cardContainer.style.cursor = 'default';
-        }
-    }
-
-    function setupEventListeners() {
-        window.addEventListener('resize', updatePoster);
-
-        if (elements.closeBtn) {
-            elements.closeBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                closeCard();
-            });
-        }
-
-        if (elements.moreBtn) {
-            elements.moreBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                openCard(true);
-            });
-        }
-
-        // Mouse Events
-        elements.cardContainer.addEventListener('mousedown', handleDragStart);
-        document.addEventListener('mousemove', handleDragMove);
-        document.addEventListener('mouseup', handleDragEnd);
-
-        // Touch Events
-        elements.cardContainer.addEventListener('touchstart', handleDragStart, { passive: false });
-        document.addEventListener('touchmove', handleDragMove, { passive: false });
-        document.addEventListener('touchend', handleDragEnd);
-    }
-
-    // Start
-    init();
 });

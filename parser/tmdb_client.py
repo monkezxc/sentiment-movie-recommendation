@@ -11,7 +11,7 @@ class TMDBClient:
     def __init__(self):
         self.api_key = os.getenv('TMDB_API_KEY')
         self.access_token = os.getenv('TMDB_ACCESS_TOKEN')
-        self.base_url = "https://api.themoviedb.org/3"
+        self.base_url = os.getenv('TMDB_API_URL', "https://api.themoviedb.org/3")
         self.language = os.getenv('LANGUAGE', 'ru')
         self.image_base_url = "https://image.tmdb.org/t/p"
         self.translator = Translator()

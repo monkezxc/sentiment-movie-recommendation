@@ -67,7 +67,7 @@ class MovieParser:
                 if kinopoisk_id:
                     reviews = self.kinopoisk.get_reviews(kinopoisk_id)
                     # Объединяем отзывы в одну строку через разделитель
-                    parsed_data['reviews'] = ' | '.join(reviews) if reviews else ''
+                    parsed_data['reviews'] = reviews if reviews else ''
                 else:
                     parsed_data['reviews'] = ''
 
@@ -88,7 +88,10 @@ def main():
         parser.run()
     except KeyboardInterrupt:
         sys.exit(0)
-    except:
+    except Exception as e:
+        print(f"Critical error: {e}")
+        import traceback
+        traceback.print_exc()
         sys.exit(1)
 
 

@@ -25,50 +25,9 @@
             </label>
         </header>
         <main class="main">
-            <section class="main__card-container">
-                <button type="button" class="close-card-button"></button>
-                <div class="overlay overlay_left"></div>
-                <div class="overlay overlay_right"></div>
-                <section class="movie-info">
-                    <h2 class="movie-title">Interstellar</h2>
-                    <ul class="emotions-rating">
-                        <li class="emotions-rating-item emotion1">
-                            <span class="emotion1-emoji">😮</span>
-                            <span class="emotion1-rating">8.4</span>
-                        </li>
-                        <li class="emotions-rating-item emotion2">
-                            <span class="emotion2-emoji">😭</span>
-                            <span class="emotion2-rating">9.1</span>
-                        </li>
-                        <li class="emotions-rating-item emotion3">
-                            <span class="emotion3-emoji">🤯</span>
-                            <span class="emotion3-rating">9.6</span>
-                        </li>
-                    </ul>
-                </section>
-                <p class="movie-description">Когда засуха, пыльные бури и вымирание растений приводят человечество к продовольственному кризису, коллектив исследователей и учёных отправляется сквозь червоточину в путешествие, чтобы превзойти прежние ограничения для космических путешествий человека и найти планету с подходящими для человечества условиями.</p>
-                <ul class="movie-button-list">
-                    <li class="movie-button-list-item">
-                        <button type="button" class='button button-container__yes-button glass-button'>yes</button>
-                    </li>
-                    <li class="movie-button-list-item center-item">
-                        <button type="button" class='button button-container__more-button glass-button'>more</button>
-                    </li>
-                    <li class="movie-button-list-item">
-                        <button type="button" class='button button-container__no-button glass-button'>no</button>
-                    </li>
-                </ul>
-                <section class="additional_info">
-                    <div class="additional_overlay"></div>
-                    <h2 class="additional_info__title"></h2>
-                    <p class="additional_info__director"></p>
-                    <p class="additional_info__item additional_info__description"></p>
-                    <p class="additional_info__item additional_info__cast"></p>
-                    <p class="additional_info__item additional_info__genres"></p>
-                    <p class="additional_info__item additional_info__rating"></p>
-
-                </section>
-            </section>
+            <div class="cards-wrapper">
+                <!-- Cards will be injected here by JS -->
+            </div>
         </main>
         <section class="search">
             <select name="emotions" id="emotions" class="emotions-filter glass-panel" >
@@ -79,6 +38,60 @@
             <textarea name="text-search" id="text-search" class='text-search glass-panel'></textarea>
         </section>
     </div>
+
+    <!-- Карточки, вставляемые JS -->
+    <template id="movie-card-template">
+        <div class="card">
+            <button type="button" class="close-card-button"></button>
+            <div class="overlay overlay_left"></div>
+            <div class="overlay overlay_right"></div>
+            
+            <section class="movie-info">
+                <h2 class="movie-title"></h2>
+                <ul class="emotions-rating">
+                    <li class="emotions-rating-item emotion1">
+                        <span class="emotion1-emoji">😮</span>
+                        <span class="emotion1-rating">8.4</span>
+                    </li>
+                    <li class="emotions-rating-item emotion2">
+                        <span class="emotion2-emoji">😭</span>
+                        <span class="emotion2-rating">9.1</span>
+                    </li>
+                    <li class="emotions-rating-item emotion3">
+                        <span class="emotion3-emoji">🤯</span>
+                        <span class="emotion3-rating">9.6</span>
+                    </li>
+                </ul>
+            </section>
+            
+            <section class='movie-description-wrapper'>
+                <p class="movie-description"></p>
+            </section>
+            
+            <ul class="movie-button-list">
+                <li class="movie-button-list-item">
+                    <button type="button" class='button button-container__yes-button glass-button' data-action="no">no</button>
+                </li>
+                <li class="movie-button-list-item center-item">
+                    <button type="button" class='button button-container__more-button glass-button' data-action="more">more</button>
+                </li>
+                <li class="movie-button-list-item">
+                    <button type="button" class='button button-container__no-button glass-button' data-action="yes">yes</button>
+                </li>
+            </ul>
+
+            <section class="additional_info">
+                <div class="additional_overlay"></div>
+                <h2 class="additional_info__title"></h2>
+                <div class="additional_info__director"></div>
+                <p class="additional_info__item additional_info__description"></p>
+                <p class="additional_info__item additional_info__cast"></p>
+                <p class="additional_info__item additional_info__genres"></p>
+                <p class="additional_info__item additional_info__rating"></p>
+            </section>
+        </div>
+    </template>
+
     <!-- Using unpkg for the latest version -->
     <script src="rgbaster.umd.js"></script>
     <script src="script.js" defer></script>

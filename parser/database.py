@@ -44,8 +44,7 @@ class Database:
                         country TEXT,
                         rating REAL,
                         tmdb_id INTEGER UNIQUE,
-                        reviews TEXT,
-                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        reviews TEXT[]
                     )
                 """)
                 self.conn.commit()

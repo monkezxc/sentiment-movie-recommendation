@@ -1,5 +1,15 @@
-/* Movie Card Container */
-.main__card-container {
+/* Cards Wrapper */
+.cards-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Movie Card - Base Style (Renamed from .main__card-container) */
+.card {
     position: absolute;
     color: var(--text-primary);
     display: grid;
@@ -18,20 +28,51 @@
     background-position: center;
     background-repeat: no-repeat;
     user-select: none;
-    transition: all 1s;
+    transition: all 0.5s ease-in-out; /* Smooth transition for everything */
     touch-action: none;
     z-index: var(--z-card);
     box-shadow: 10px 10px 20px black;
+    background-color: #1a1a1a; /* Fallback */
 }
 
 @media (width <= 1130px) {
-    .main__card-container {
+    .card {
         background-size: auto 100%;
     }
 }
 
+/* Stacking Logic */
+.card.active {
+    z-index: 10;
+    transform: scale(1) translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.card.next {
+    z-index: 5;
+    transform: scale(0.92) translateY(30px); /* Smaller and slightly lower */
+    opacity: 0.6;
+    pointer-events: none; /* Disable interaction */
+    filter: brightness(0.7); /* Darken the back card slightly */
+}
+
+/* Exit Animations */
+.card.exit-left {
+    transform: translateX(-120%) rotate(-10deg);
+    opacity: 0;
+    z-index: 11; /* Stay on top while leaving */
+}
+
+.card.exit-right {
+    transform: translateX(120%) rotate(10deg);
+    opacity: 0;
+    z-index: 11;
+}
+
+
 /* Gradient Overlays */
-.main__card-container::after, .main__card-container::before {
+.card::after, .card::before {
     content: '';
     position: absolute;
     bottom: 0;
@@ -44,7 +85,7 @@
     transition: opacity 0.5s;
 }
 
-.main__card-container::before {
+.card::before {
     top: 0;
     height: 20%;
     background: linear-gradient(180deg, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0));
@@ -57,6 +98,7 @@
 
 .is-open {
     user-select: text;
+    z-index: 100; /* Ensure open card is on top */
 }
 
 .is-open .close-card-button {
@@ -68,6 +110,8 @@
     display: flex;
     grid-area: title;
     justify-content: center;
+    font-size: clamp(1.5rem, 0.9222rem + 2.4653vw, 2.5rem);
+    margin: 1rem;
 }
 
 /* Emotions Rating */
@@ -80,29 +124,30 @@
     gap: 3%;
 }
 
-/* Movie Description */
-.movie-description {
+.movie-description-wrapper {
     display: flex;
     grid-area: description;
-    justify-self: center;
     align-items: flex-end;
+    justify-content: center;
+}
+
+/* Movie Description */
+.movie-description {
+    justify-self: center;
     text-indent: 2%;
     text-align: center;
     width: 90%;
+    font-size: clamp(0.75rem, 0.5333rem + 0.9245vw, 1.125rem);
     margin: 0;
-    font-size: 12px;
-}
-
-@media (width >= 768px) {
-    .movie-description {
-        font-size: 16px
-    }
-}
-
-@media (width >= 1024px) {
-    .movie-description {
-        font-size: 18px
-    }
+    max-height: 25%;
+    
+    /* Line clamping logic */
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* Action Buttons List */
@@ -158,11 +203,13 @@
         'additional_cast additional_cast'
         'additional_genres additional_rating';
     font-size: 20px;
-    padding: 0 15px 0 15px;
+    padding: 0 25px 0 25px;
+    z-index: 20;
 }
 
 .additional_info__item {
     margin-top: 18px;
+    width: 100%;
 }
 
 .additional_info__item:first-child {
@@ -172,71 +219,82 @@
 /* Additional Info Typography */
 .additional_info__title {
     grid-area: additional_title;
-    font-size: 64px;
-    display: flex;
+    font-size: clamp(1.5rem, 0.0555rem + 6.1633vw, 4rem);
+    display: inline-flex;
     align-items: baseline;
+    margin-bottom: 0;
+    width: min-content;
+
 }
 
 .movie-year {
-    font-size: 40px;
+    display: inline;
+    font-size: 0.5em;
     font-weight: 400;
     margin-left: 10px;
+    align-self: end;
+    text-align: start;
 }
 
 .additional_info__director {
     box-sizing: border-box;
     grid-area: additional_director;
-    font-size: 45px;
+    font-size: clamp(1rem, 0.1333rem + 3.698vw, 2.5rem);
     font-weight: 700;
     justify-self: end;
     display: flex;
     align-items: last baseline;
-    padding-bottom: 2.5%;
+    text-align: end;
+    width: min-content;
 }
 
 .additional_info__director::before {
     content: 'Режиссёр: ';
-    font-size: 30px;
+    font-size: 0.5em;
     font-weight: 400;
     margin-right: 10px;
+    margin-left: 10px;
 }
 
 .additional_info__description {
+    padding-top: 15px;
+    width: calc(100% - 15px);
     grid-area: additional_description;
-    font-size: 32px;
+    font-size: clamp(1rem, 0.7111rem + 1.2327vw, 1.5rem);
+    height: max-content;
 }
 
 .additional_info__cast {
     grid-area: additional_cast;
-    font-size: 32px;
+    font-size: clamp(1rem, 0.7111rem + 1.2327vw, 1.5rem);
 }
 
 .additional_info__cast::before {
     content: 'Актеры: ';
     font-weight: 700;
-    font-size: 36px;
+    font-size: 1.125em;
 }
 
 .additional_info__genres {
     grid-area: additional_genres;
-    font-size: 32px;
+    font-size: clamp(1rem, 0.7111rem + 1.2327vw, 1.5rem);
 }
 
 .additional_info__genres::before {
     content: 'Жанр: ';
     font-weight: 700;
-    font-size: 36px;
+    font-size: 1.125em;
 }
 
 .additional_info__rating {
     grid-area: additional_rating;
-    font-size: 32px;
+    font-size: clamp(1rem, 0.7111rem + 1.2327vw, 1.5rem);
 }
 
 .additional_info__rating::before {
     content: 'Рейтинг: ';
     font-weight: 700;
-    font-size: 36px;
+    font-size: 1.125em;
 }
 
 /* Overlays */
@@ -253,4 +311,3 @@
     right: 0;
     background: linear-gradient(-90deg, rgba(var(--theme-color-rgb), 1), rgba(var(--theme-color-rgb), 0.4), rgba(var(--theme-color-rgb), 0));
 }
-
