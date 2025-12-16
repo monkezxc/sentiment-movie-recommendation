@@ -1,8 +1,18 @@
 document.addEventListener('DOMContentLoaded', () => {
     // Управление состоянием приложения
+    const params = new
+    URLSearchParams(window.location.search);
+    const USER_ID = params.get('user')
+    // Update API port to 8000 (standard for FastAPI)
+    const API_URL = 'http://127.0.0.1:5001'; 
+
     const state = {
         movies: [],
+        searchQuery: '', // Храним текущий поисковый запрос
         currentIndex: 0,
+        offset: 0,        // Tracks how many movies fetched from DB total
+        isLoading: false, // Prevents duplicate requests
+        endCardAdded: false, // <--- Добавлено: флаг, что финальная карта уже добавлена
         isAnimating: false,
         isDragging: false,
         startX: 0,
@@ -16,9 +26,329 @@ document.addEventListener('DOMContentLoaded', () => {
         width: window.innerWidth,
     };
 
+    // Функция для загрузки отзывов фильма
+    async function loadMovieReviews(card, movieId) {
+        try {
+            const response = await fetch(`${API_URL}/movies/${movieId}/reviews`);
+            if (response.ok) {
+                const reviews = await response.json();
+                displayReviews(card, reviews);
+            }
+        } catch (error) {
+            console.error('Ошибка загрузки отзывов:', error);
+        }
+    }
+
+    // Функция для отображения отзывов
+    function displayReviews(card, reviews) {
+        const reviewsList = card.querySelector('.reviews-section__list');
+        if (!reviewsList) return;
+
+        reviewsList.innerHTML = ''; // Очищаем список
+
+        if (reviews && reviews.length > 0) {
+            reviews.forEach(review => {
+                const reviewItem = document.createElement('li');
+                reviewItem.className = 'reviews-section__item';
+
+                // Собираем эмоции с ненулевыми значениями
+                const emotions = [];
+                const emotionLabels = {
+                    sadness_rating: 'грусть',
+                    optimism_rating: 'оптимизм',
+                    fear_rating: 'страх',
+                    anger_rating: 'гнев',
+                    neutral_rating: 'нейтральность',
+                    worry_rating: 'беспокойство',
+                    love_rating: 'любовь',
+                    fun_rating: 'веселье',
+                    boredom_rating: 'скука'
+                };
+
+                Object.entries(emotionLabels).forEach(([key, label]) => {
+                    const rating = review[key];
+                    if (rating && rating > 0) {
+                        emotions.push(`${label} ${rating}`);
+                    }
+                });
+
+                const emotionsHtml = emotions.length > 0
+                    ? emotions.map(emotion => `<span class="review-emotion">${emotion}</span>`).join('')
+                    : '<span class="review-emotion">Без эмоций</span>';
+
+                reviewItem.innerHTML = `
+                    <div class="review-user-info">
+                        <span class="review-username">Пользователь ${review.user_id || 'Anonymous'}</span>
+                    </div>
+                    <div class="review-emotions">
+                        ${emotionsHtml}
+                    </div>
+                    <p class="review-text">${review.text || 'Нет текста отзыва'}</p>
+                `;
+
+                reviewsList.appendChild(reviewItem);
+            });
+        } else {
+            // Если отзывов нет, показываем сообщение
+            const noReviewsItem = document.createElement('li');
+            noReviewsItem.className = 'reviews-section__item';
+            noReviewsItem.innerHTML = `
+                <p class="review-text">Пока нет отзывов. Будьте первым!</p>
+            `;
+            reviewsList.appendChild(noReviewsItem);
+        }
+    }
+
+    // Функция для отправки отзыва
+    async function submitReview(card, reviewText) {
+        const movieId = state.currentMovieId;
+        if (!movieId) return;
+
+        // Собираем данные из интерфейса эмоций
+        const emotionData = collectEmotionData(card);
+
+        try {
+            const reviewData = {
+                user_id: USER_ID || 1, // Используем ID из URL или дефолтный
+                text: reviewText,
+                ...emotionData // Добавляем оценки эмоций
+            };
+
+            const response = await fetch(`${API_URL}/movies/${movieId}/review`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(reviewData)
+            });
+
+            if (response.ok) {
+                const updatedReviews = await response.json();
+                displayReviews(card, updatedReviews);
+            } else {
+                console.error('Ошибка отправки отзыва:', response.status);
+            }
+        } catch (error) {
+            console.error('Ошибка отправки отзыва:', error);
+        }
+    }
+
+    // Функция сбора данных из интерфейса эмоций
+    function collectEmotionData(card) {
+        const emotionGroups = card.querySelectorAll('.emotion-input-group');
+        const emotionData = {
+            sadness_rating: 0,
+            optimism_rating: 0,
+            fear_rating: 0,
+            anger_rating: 0,
+            neutral_rating: 0,
+            worry_rating: 0,
+            love_rating: 0,
+            fun_rating: 0,
+            boredom_rating: 0
+        };
+
+        emotionGroups.forEach(group => {
+            const emotionSelect = group.querySelector('.emotion-select');
+            const ratingSelect = group.querySelector('.rating-select');
+
+            if (emotionSelect.value && ratingSelect.value) {
+                const emotionKey = emotionSelect.value;
+                const ratingValue = parseInt(ratingSelect.value);
+                emotionData[emotionKey] = ratingValue;
+            }
+        });
+
+        return emotionData;
+    }
+
+    // Функция инициализации интерфейса эмоций
+    function initializeEmotionInterface(card) {
+        const emotionInputsContainer = card.querySelector('#emotion-inputs');
+        const addEmotionBtn = card.querySelector('#add-emotion-btn');
+
+        if (!emotionInputsContainer || !addEmotionBtn) return;
+
+        // Обработчик изменения селекта эмоций
+        emotionInputsContainer.addEventListener('change', (e) => {
+            if (e.target.classList.contains('emotion-select')) {
+                const group = e.target.closest('.emotion-input-group');
+                const ratingSelect = group.querySelector('.rating-select');
+                const removeBtn = group.querySelector('.emotion-remove-btn');
+
+                if (e.target.value) {
+                    ratingSelect.disabled = false;
+                    removeBtn.disabled = false;
+                } else {
+                    ratingSelect.disabled = true;
+                    ratingSelect.value = '';
+                    removeBtn.disabled = true;
+                }
+
+                updateAddButtonState(card);
+            }
+        });
+
+        // Обработчик кнопки добавления эмоции
+        addEmotionBtn.addEventListener('click', () => {
+            addEmotionGroup(card);
+        });
+
+        // Обработчик кнопок удаления эмоций
+        emotionInputsContainer.addEventListener('click', (e) => {
+            if (e.target.classList.contains('emotion-remove-btn') && !e.target.disabled) {
+                removeEmotionGroup(e.target.closest('.emotion-input-group'));
+                updateAddButtonState(card);
+            }
+        });
+
+        // Инициализируем первую группу эмоций
+        updateAddButtonState(card);
+    }
+
+    // Функция добавления группы эмоций
+    function addEmotionGroup(card) {
+        const emotionInputsContainer = card.querySelector('#emotion-inputs');
+        const existingGroups = emotionInputsContainer.querySelectorAll('.emotion-input-group');
+
+        if (existingGroups.length >= 3) return; // Максимум 3 эмоции
+
+        const emotionGroup = document.createElement('div');
+        emotionGroup.className = 'emotion-input-group';
+        emotionGroup.innerHTML = `
+            <select class="emotion-select">
+                <option value="">Выберите эмоцию</option>
+                <option value="sadness_rating">Грусть</option>
+                <option value="optimism_rating">Оптимизм</option>
+                <option value="fear_rating">Страх</option>
+                <option value="anger_rating">Гнев</option>
+                <option value="neutral_rating">Нейтральность</option>
+                <option value="worry_rating">Беспокойство</option>
+                <option value="love_rating">Любовь</option>
+                <option value="fun_rating">Веселье</option>
+                <option value="boredom_rating">Скука</option>
+            </select>
+            <select class="rating-select" disabled>
+                <option value="">Оценка</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+                <option value="8">8</option>
+                <option value="9">9</option>
+                <option value="10">10</option>
+            </select>
+            <button type="button" class="emotion-remove-btn" disabled>×</button>
+        `;
+
+        emotionInputsContainer.appendChild(emotionGroup);
+        updateAddButtonState(card);
+    }
+
+    // Функция удаления группы эмоций
+    function removeEmotionGroup(groupElement) {
+        const container = groupElement.parentElement;
+        const groups = container.querySelectorAll('.emotion-input-group');
+
+        if (groups.length > 1) { // Всегда должна быть хотя бы одна группа
+            groupElement.remove();
+        }
+    }
+
+    // Функция обновления состояния кнопки добавления
+    function updateAddButtonState(card) {
+        const addEmotionBtn = card.querySelector('#add-emotion-btn');
+        const emotionInputsContainer = card.querySelector('#emotion-inputs');
+        const existingGroups = emotionInputsContainer.querySelectorAll('.emotion-input-group');
+
+        // Проверяем, все ли группы имеют выбранные эмоции
+        const allGroupsHaveEmotions = Array.from(existingGroups).every(group => {
+            const emotionSelect = group.querySelector('.emotion-select');
+            return emotionSelect && emotionSelect.value;
+        });
+
+        // Кнопка активна, если меньше 3 групп и все текущие группы имеют эмоции
+        addEmotionBtn.disabled = existingGroups.length >= 3 || !allGroupsHaveEmotions;
+    }
+
+    // Функция сброса интерфейса эмоций
+    function resetEmotionInterface(card) {
+        const emotionInputsContainer = card.querySelector('#emotion-inputs');
+        const addEmotionBtn = card.querySelector('#add-emotion-btn');
+
+        if (!emotionInputsContainer) return;
+
+        // Оставляем только первую группу и очищаем её
+        const firstGroup = emotionInputsContainer.querySelector('.emotion-input-group');
+        if (firstGroup) {
+            const emotionSelect = firstGroup.querySelector('.emotion-select');
+            const ratingSelect = firstGroup.querySelector('.rating-select');
+            const removeBtn = firstGroup.querySelector('.emotion-remove-btn');
+
+            emotionSelect.value = '';
+            ratingSelect.value = '';
+            ratingSelect.disabled = true;
+            removeBtn.disabled = true;
+        }
+
+        // Удаляем все дополнительные группы
+        const extraGroups = emotionInputsContainer.querySelectorAll('.emotion-input-group:nth-child(n+2)');
+        extraGroups.forEach(group => group.remove());
+
+        // Обновляем состояние кнопки
+        if (addEmotionBtn) {
+            addEmotionBtn.disabled = true;
+        }
+    }
+
     // DOM элементы
     const wrapper = document.querySelector('.cards-wrapper');
     const root = document.documentElement;
+    const searchInput = document.querySelector('.header__search');
+    const searchButton = document.querySelector('.header__search-button');
+
+    // Обработчик поиска
+    async function handleSearch() {
+        const query = searchInput.value.trim();
+        
+        // Сброс состояния для нового поиска
+        state.searchQuery = query;
+        state.offset = 0;
+        state.movies = [];
+        state.currentIndex = 0;
+        state.endCardAdded = false; // Сбрасываем флаг при новом поиске
+        
+        // Очистка текущих карточек
+        wrapper.innerHTML = ''; // Удаляем все существующие карточки
+        
+        // Загрузка новых данных
+        await loadMovies(20);
+        
+        // Если ничего не найдено, можно показать уведомление (опционально)
+        if (state.movies.length === 0) {
+            // Можно добавить логику отображения "Ничего не найдено"
+            console.log('Ничего не найдено');
+        } else {
+            renderInitialStack();
+        }
+    }
+
+    // Слушатели событий для поиска
+    if (searchButton) {
+        searchButton.addEventListener('click', handleSearch);
+    }
+
+    if (searchInput) {
+        searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                handleSearch();
+                searchInput.blur(); // Убираем фокус с инпута после нажатия Enter
+            }
+        });
+    }
 
     // Вспомогательная функция линейной интерполяции (для анимации)
     const lerp = (start, end, t) => start * (1 - t) + end * t;
@@ -27,27 +357,80 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Инициализация: загрузка данных фильмов
     async function init() {
-        await loadMovieData();
+        await loadMovies(20);
+        renderInitialStack();
     }
 
-    // Загрузка списка фильмов из JSON файла
-    async function loadMovieData() {
+    // Function to load movies with pagination
+    async function loadMovies(limit = 10) {
+        // Prevent multiple simultaneous requests
+
+        if (state.isLoading) return false;
+        state.isLoading = true;
+
         try {
-            const response = await fetch('movies.json');
-            const data = await response.json();
-            if (data.movies && data.movies.length > 0) {
-                state.movies = data.movies;
-                renderInitialStack();
+            // Request to your new backend endpoint
+            const userId = USER_ID || 1;
+            let url;
+            
+            if (state.searchQuery) {
+                // Если есть поисковый запрос, используем эндпоинт поиска
+                url = `${API_URL}/movies/search?search=${encodeURIComponent(state.searchQuery)}&skip=${state.offset}&user_id=${userId}&limit=${limit}`;
+            } else {
+                // Иначе стандартная лента
+                url = `${API_URL}/movies/?skip=${state.offset}&user_id=${userId}&limit=${limit}`;
+            }
+
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('Network response was not ok');
+
+            const newMovies = await response.json();
+
+            // Если фильмов меньше лимита (конец списка) и финальная карта еще не добавлена
+            if (newMovies.length < limit && !state.endCardAdded) {
+                // Добавляем специальный объект-маркер для финальной карточки
+                newMovies.push({
+                    id: 'end-card',
+                    isEndCard: true, // Наш флаг
+                    title: '',
+                    description: '',
+                    rating: '',
+                    director: '',
+                    actors: '',
+                    genre: '',
+                    horizontal_poster_url: '',
+                    vertical_poster_url: ''
+                });
+                state.endCardAdded = true;
+            }
+
+            if (newMovies.length > 0) {
+                // Append new movies to the end of the array
+                state.movies.push(...newMovies);
+                // Update global offset
+                state.offset += newMovies.length - (state.endCardAdded && newMovies[newMovies.length-1].isEndCard ? 1 : 0);
+                return true;
             }
         } catch (error) {
-            console.error('Failed to load movie data:', error);
+            console.error('Failed to load movies:', error);
+        } finally {
+            state.isLoading = false;
         }
+        return false;
     }
 
     // Отрисовка начального стека карт (активная и следующая)
     function renderInitialStack() {
         if (state.movies[0]) {
             createAndAppendCard(0, 'active');
+            // Загружаем отзывы для первой активной карточки
+            const activeCard = wrapper.querySelector('.card.active');
+            if (activeCard) {
+                const movieId = activeCard.dataset.movieId;
+                if (movieId) {
+                    loadMovieReviews(activeCard, parseInt(movieId));
+                }
+            }
         }
         if (state.movies[1]) {
             createAndAppendCard(1, 'next');
@@ -57,11 +440,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Создание и добавление DOM-элемента карты
     function createAndAppendCard(index, type) {
         if (index >= state.movies.length) return;
-        // проверка на ширину экрана для выбора постера
-        const isMobile = state.width <= 456;
         
         const movie = state.movies[index];
-        
         const template = document.getElementById('movie-card-template');
         const clone = template.content.cloneNode(true);
         const card = clone.querySelector('.card');
@@ -69,10 +449,43 @@ document.addEventListener('DOMContentLoaded', () => {
         card.classList.add(type);
         card.dataset.index = index;
 
-        const bgImage = isMobile ? movie.vertical_poster : movie.horizontal_poster;
+        const isMobile = state.width <= 456;
+
+        // --- БЛОК ДЛЯ ФИНАЛЬНОЙ КАРТОЧКИ ---
+        if (movie.isEndCard) {
+            card.classList.add('end-card'); // <--- Добавляем класс
+            // Задайте здесь путь к вашему фону
+            card.style.backgroundImage = isMobile ? 'url("/site/images/not_found_vertical.png")' : 'url("/site/images/not_found_horizontal.png")'; 
+            card.style.backgroundSize = 'cover';
+            
+            // Скрываем стандартные элементы интерфейса
+            const elementsToHide = [
+                '.movie-info', 
+                '.movie-description-wrapper', 
+                '.movie-button-list', 
+                '.additional_info',
+                '.overlay'
+            ];
+            
+            elementsToHide.forEach(selector => {
+                const el = card.querySelector(selector);
+                if (el) el.style.display = 'none';
+            });
+
+            wrapper.appendChild(card);
+               
+            return; 
+        }
+        // -----------------------------------
+        
+        const id = movie.id;
+        card.dataset.movieId = id;
+
+        // Update field names to match Python model (_url suffix)
+        const bgImage = isMobile ? movie.vertical_poster_url : movie.horizontal_poster_url;
         card.style.backgroundImage = `url(${bgImage})`;
 
-        const id = movie.id;
+        state.currentMovieId = movie.id;
 
         card.querySelector('.movie-title').textContent = movie.title;
         card.querySelector('.movie-description').textContent = movie.description;
@@ -84,6 +497,7 @@ document.addEventListener('DOMContentLoaded', () => {
         card.querySelector('.additional_info__cast').textContent = movie.actors;
         card.querySelector('.additional_info__genres').textContent = movie.genre;
         card.querySelector('.additional_info__rating').textContent = movie.rating;
+
 
         wrapper.appendChild(card);
 
@@ -109,6 +523,56 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    async function postLike(movieId) {
+        // Prevent multiple simultaneous requests
+        try {
+            const response = await fetch(`${API_URL}/favorite/like/${USER_ID}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    movie_id: movieId
+                })
+            });
+        
+            if (!response.ok) {
+                throw new Error(`Ошибка сети: ${response.status}`);
+            }
+
+            const result = await response.json();
+            console.log('Лайк успешно отправлен:', result);
+        } catch (error) {
+            console.error('Ошибка при отправке лайка:', error);
+        }
+
+    }
+
+    async function postDislike(movieId) {
+        const userId = USER_ID || 1;
+
+        try {
+            const response = await fetch(`${API_URL}/favorite/dislike/${userId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    movie_id: movieId
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`Ошибка сети: ${response.status}`);
+            }
+
+            const result = await response.json();
+            console.log('Дизлайк успешно отправлен:', result);
+        } catch (error) {
+            console.error('Ошибка при отправке дизлайка:', error);
+        }
+    }
+
     // Настройка обработчиков событий для карты
     function setupCardEvents(card) {
         const yesBtn = card.querySelector('[data-action="yes"]');
@@ -130,6 +594,21 @@ document.addEventListener('DOMContentLoaded', () => {
             closeCard(card);
         });
 
+        // обработка кнопки отправки отзыва
+        const submitReviewBtn = card.querySelector('#submit-review-btn');
+        if (submitReviewBtn) {
+            submitReviewBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const reviewInput = card.querySelector('.reviews-section__input');
+                if (reviewInput && reviewInput.value.trim()) {
+                    submitReview(card, reviewInput.value.trim());
+                    reviewInput.value = '';
+                    // Очищаем интерфейс эмоций
+                    resetEmotionInterface(card);
+                }
+            });
+        }
+
         // обработка касаний для свайпов
         card.addEventListener('mousedown', handleDragStart);
         card.addEventListener('touchstart', handleDragStart, { passive: false });
@@ -144,6 +623,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         state.isAnimating = true;
 
+        const movieId = parseInt(activeCard.dataset.movieId);
+
+        if (decision == 'yes') {
+            postLike(movieId)
+        } else {
+            postDislike(movieId)
+        }
+
         const exitClass = decision === 'yes' ? 'exit-right' : 'exit-left';
         activeCard.classList.add(exitClass);
         activeCard.classList.remove('active');
@@ -152,10 +639,31 @@ document.addEventListener('DOMContentLoaded', () => {
         if (nextCard) {
             nextCard.classList.remove('next');
             nextCard.classList.add('active');
-            nextCard.style.transform = ''; 
+            nextCard.style.transform = '';
+
+            // Загружаем отзывы для новой активной карточки
+            const nextMovieId = nextCard.dataset.movieId;
+            if (nextMovieId) {
+                loadMovieReviews(nextCard, parseInt(nextMovieId));
+            }
         }
 
-        state.currentIndex++; 
+        state.currentIndex++;
+
+        if (state.currentIndex >= 10) {
+            // Load next 10 movies in background
+            loadMovies(10).then((loaded) => {
+                if (loaded) {
+                    // Remove the first 10 movies to free memory
+                    state.movies.splice(0, 10);
+                    
+                    // Adjust currentIndex because the array shifted by 10 positions
+                    // The active card logic remains consistent
+                    state.currentIndex -= 10;
+                }
+            });
+        }
+
         const nextNextIndex = state.currentIndex + 1;
         
         createAndAppendCard(nextNextIndex, 'next');
@@ -169,6 +677,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Начало перетаскивания карты
     function handleDragStart(e) {
         const card = e.currentTarget;
+        
+        // Добавляем проверку: если карточка финальная - выходим
+        if (card.classList.contains('end-card')) return; 
+
         if (!card.classList.contains('active') || state.cardOpen) return;
 
         state.isDragging = true;
@@ -290,11 +802,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Глобальные обработчики событий ввода
+    console.log(state.movies)
+
     document.addEventListener('mousemove', handleDragMove);
     document.addEventListener('mouseup', handleDragEnd);
     document.addEventListener('touchmove', handleDragMove, { passive: false });
     document.addEventListener('touchend', handleDragEnd);
-
     // Получение координаты X из события мыши или касания
     function getClientX(e) {
         if (e.changedTouches && e.changedTouches.length > 0) {
@@ -377,6 +890,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (animated) setTimeout(enableScroll, 500);
         else enableScroll();
 
+        // Загружаем отзывы для фильма сразу при открытии карточки
+        const movieId = card.dataset.movieId;
+        if (movieId) {
+            loadMovieReviews(card, parseInt(movieId));
+        }
+
         // скрываем данные, указанные на закрытой карточке
         if(ratings) ratings.style.opacity = '0';
         if(description) description.style.opacity = '0';
@@ -387,7 +906,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (addInfo) {
                 addInfo.style.opacity = '0';
                 addInfo.style.display = 'grid';
-                
+
                 requestAnimationFrame(() => {
                     addInfo.style.opacity = '1';
                     overlay.forEach(el => el.style.opacity = '1');
@@ -397,6 +916,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (animated) setTimeout(showAdditional, 500);
         else showAdditional();
+
+        // Инициализируем интерфейс эмоций
+        initializeEmotionInterface(card);
     }
 
     // Закрытие карты и возврат в стек

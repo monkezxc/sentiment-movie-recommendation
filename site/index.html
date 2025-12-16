@@ -15,13 +15,23 @@
 <body>
     <div class="main-container">
         <header class="header">
-            <label class="header__search-label header__button">
-                <input type="checkbox" class="header__search-checkbox visually-hidden">
-                <span class="header__search-pseudo-checkbox pseudo-checkbox glass-panel"></span>
+            <label class="header__search-form">
+                <input type="text" class="header__search glass-panel" placeholder="Введите название фильма">
+                <button type="submit" class="header__search-button glass-button">
+                    <svg width="20px" height="20px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M15.7955 15.8111L21 21M18 10.5C18 14.6421 14.6421 18 10.5 18C6.35786 18 3 14.6421 3 10.5C3 6.35786 6.35786 3 10.5 3C14.6421 3 18 6.35786 18 10.5Z" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
             </label>
             <label class="header__menu-label header__button">
                 <input type="checkbox" class="header__menu-checkbox visually-hidden"></button>
-                <span class="header__menu-pseudo-checkbox pseudo-checkbox glass-panel"></span>
+                <span class="header__menu-pseudo-checkbox pseudo-checkbox glass-panel">
+                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" class="header__menu-icon">
+                        <path d="M4 18L20 18" stroke="#000000" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M4 12L20 12" stroke="#000000" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M4 6L20 6" stroke="#000000" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </span>
             </label>
         </header>
         <main class="main">
@@ -31,9 +41,16 @@
         </main>
         <section class="search">
             <select name="emotions" id="emotions" class="emotions-filter glass-panel" >
-                <option value="sadness" class="emotions-option">sadness</option>
-                <option value="joy" class="emotions-option">joy</option>
-                <option value="fear" class="emotions-option">fear</option>
+                <option value="">Выберите эмоцию</option>
+                <option value="sadness">Грусть</option>
+                <option value="optimism">Оптимизм</option>
+                <option value="fear">Страх</option>
+                <option value="anger">Гнев</option>
+                <option value="neutral">Нейтральность</option>
+                <option value="worry">Беспокойство</option>
+                <option value="love">Любовь</option>
+                <option value="fun">Веселье</option>
+                <option value="boredom">Скука</option>
             </select>
             <textarea name="text-search" id="text-search" class='text-search glass-panel'></textarea>
         </section>
@@ -81,13 +98,69 @@
             </ul>
 
             <section class="additional_info">
-                <div class="additional_overlay"></div>
                 <h2 class="additional_info__title"></h2>
                 <div class="additional_info__director"></div>
                 <p class="additional_info__item additional_info__description"></p>
                 <p class="additional_info__item additional_info__cast"></p>
                 <p class="additional_info__item additional_info__genres"></p>
                 <p class="additional_info__item additional_info__rating"></p>
+
+                <section class="reviews-section">
+                    <h3 class="reviews-section__title">Отзывы</h3>
+                    <div class="reviews-section__input-wrapper">
+                        <textarea class="reviews-section__input" placeholder="Введите ваш отзыв" rows="3"></textarea>
+                    </div>
+
+                    <div class="reviews-section__emotions-wrapper">
+                        <div class="emotion-input-container" id="emotion-inputs">
+                            <div class="emotion-input-group">
+                                <select class="emotion-select">
+                                    <option value="">Выберите эмоцию</option>
+                                    <option value="sadness_rating">Грусть</option>
+                                    <option value="optimism_rating">Оптимизм</option>
+                                    <option value="fear_rating">Страх</option>
+                                    <option value="anger_rating">Гнев</option>
+                                    <option value="neutral_rating">Нейтральность</option>
+                                    <option value="worry_rating">Беспокойство</option>
+                                    <option value="love_rating">Любовь</option>
+                                    <option value="fun_rating">Веселье</option>
+                                    <option value="boredom_rating">Скука</option>
+                                </select>
+                                <select class="rating-select" disabled>
+                                    <option value="">Оценка</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                    <option value="5">5</option>
+                                    <option value="6">6</option>
+                                    <option value="7">7</option>
+                                    <option value="8">8</option>
+                                    <option value="9">9</option>
+                                    <option value="10">10</option>
+                                </select>
+                                <button type="button" class="emotion-remove-btn" disabled>×</button>
+                            </div>
+                        </div>
+                        <button type="button" class="emotion-add-btn" id="add-emotion-btn">+ Добавить эмоцию</button>
+                    </div>
+
+                    <button type="button" class="reviews-submit-btn" id="submit-review-btn">Отправить отзыв</button>
+
+                    <ul class="reviews-section__list">
+                        <li class="reviews-section__item">
+                            <div class="review-user-info">
+                                <span class="review-username"></span>
+                            </div>
+                            <div class="review-emotions">
+                                <span class="review-emotion"></span>
+                                <span class="review-emotion"></span>
+                                <span class="review-emotion"></span>
+                            </div>
+                            <p class="review-text"></p>
+                        </li>
+                    </ul>
+                </section>
             </section>
         </div>
     </template>

@@ -41,19 +41,90 @@ body {
     position: relative;
     grid-area: header;
     box-sizing: border-box;
-    padding: 2.5%;
-    width: 100%;
+    width: 80%;
     display: flex;
+    justify-self: center;
     justify-content: space-between;
     align-items: center;
+}
+
+@media (width >= 768px) {
+    .header {
+        width: 100%;
+        padding: 2.5%;
+    }
+}
+
+.header__search-form {
+    display: flex;
+    position: relative;
+    color: inherit;
+    border-radius: 10px;
+    font-style: inherit;
+}
+
+.header__search-button {
+    box-sizing: border-box;
+    width: clamp(35px, 4vw, 60px);
+    height: 100%;
+    position: absolute;
+    right: 0;
+    top: -3%;
+    border-radius: 0 10px 10px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.header__search-button svg,
+.header__menu-pseudo-checkbox svg {
+    width: 20px;
+    height: 20px;
+    stroke: rgba(var(--theme-color-rgb), 1);
+    transition: stroke 0.3s ease;
+}
+
+.header__search-button:hover svg,
+.header__menu-label:hover .header__menu-pseudo-checkbox svg {
+    stroke: rgba(var(--theme-color-rgb), 0.8);
+}
+
+.header__menu-pseudo-checkbox {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+}
+
+.header__menu-icon {
+    stroke: rgba(var(--theme-color-rgb), 1);
+    transition: stroke 0.3s ease;
+}
+
+.header__search {
+    display: flex;
+    box-sizing: border-box;
+    flex-grow: 1;
+    padding-right: clamp(35px, 4vw, 60px);
+    width: clamp(185px, 40vw, 300px);
+    height: clamp(35px, 4vw, 60px);
+    padding: 1px 4vw 1px 2px;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: clamp(8.5px, 1.5vw, 14px);
+}
+
+.header__search::placeholder {
+    color: black;
+    font-style: inherit;
 }
 
 .header__button {
     box-sizing: border-box;
     display: flex;
-    min-width: 35px;
-    max-width: 4%;
-    flex-grow: 1;
+    width: clamp(35px, 4vw, 60px);
     aspect-ratio: 1 / 1;
     z-index: var(--z-header);
 }
