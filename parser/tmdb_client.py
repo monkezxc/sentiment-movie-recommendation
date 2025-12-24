@@ -4,7 +4,7 @@
 import os
 import requests
 from typing import Dict, List, Optional
-from googletrans import Translator
+from deep_translator import GoogleTranslator
 
 
 class TMDBClient:
@@ -14,7 +14,7 @@ class TMDBClient:
         self.base_url = os.getenv('TMDB_API_URL', "https://api.themoviedb.org/3")
         self.language = os.getenv('LANGUAGE', 'ru')
         self.image_base_url = "https://image.tmdb.org/t/p"
-        self.translator = Translator()
+        self.translator = GoogleTranslator(source='auto', target='ru')
 
     def get_popular_movies(self, page=1) -> Optional[Dict]:
         """Получение списка популярных фильмов"""
@@ -29,7 +29,7 @@ class TMDBClient:
                 "page": page
             }
 
-            response = requests.get(url, headers=headers, params=params)
+            response = requests.get(url, headers=headers, params=params, timeout=10)
             response.raise_for_status()
             return response.json()
         except:
@@ -48,18 +48,18 @@ class TMDBClient:
                 "language": self.language
             }
 
-            response = requests.get(url, headers=headers, params=params)
+            response = requests.get(url, headers=headers, params=params, timeout=10)
             response.raise_for_status()
             movie_data = response.json()
 
             # Получаем информацию о создателях
             credits_url = f"{self.base_url}/movie/{movie_id}/credits"
-            credits_response = requests.get(credits_url, headers=headers, params=params)
+            credits_response = requests.get(credits_url, headers=headers, params=params, timeout=10)
             credits_data = credits_response.json() if credits_response.status_code == 200 else {}
 
             # Получаем переводы для проверки языка
             translations_url = f"{self.base_url}/movie/{movie_id}/translations"
-            translations_response = requests.get(translations_url, headers={"Authorization": f"Bearer {self.access_token}"})
+            translations_response = requests.get(translations_url, headers={"Authorization": f"Bearer {self.access_token}"}, timeout=10)
             translations_data = translations_response.json() if translations_response.status_code == 200 else {}
 
             # Объединяем данные
@@ -90,8 +90,8 @@ class TMDBClient:
         # Пытаемся перевести с 3 попытками
         for attempt in range(1, 4):
             try:
-                translated = self.translator.translate(text, src='auto', dest='ru')
-                return translated.text
+                translated = self.translator.translate(text)
+                return translated
             except:
                 if attempt == 3:
                     return text
@@ -152,11 +152,11 @@ class TMDBClient:
         if not self.is_russian_title(title):
             return None
 
-        # Получаем URL вертикального постера (постер)
+        # Получаем URL вертикального постера
         poster_path = movie_data.get('poster_path')
         vertical_poster = f"{self.image_base_url}/w780{poster_path}" if poster_path else None
 
-        # Получаем URL горизонтального постера (backdrop)
+        # Получаем URL горизонтального постера
         backdrop_path = movie_data.get('backdrop_path')
         horizontal_poster = f"{self.image_base_url}/w780{backdrop_path}" if backdrop_path else None
 

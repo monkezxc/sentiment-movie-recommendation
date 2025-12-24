@@ -1,5 +1,4 @@
 
-/* Cards Wrapper */
 .cards-wrapper {
     position: relative;
     width: 100%;
@@ -9,7 +8,6 @@
     align-items: center;
 }
 
-/* Movie Card - Base Style (Renamed from .main__card-container) */
 .card {
     position: absolute;
     color: var(--text-primary);
@@ -29,11 +27,11 @@
     background-position: center;
     background-repeat: no-repeat;
     user-select: none;
-    transition: all 0.5s ease-in-out; /* Smooth transition for everything */
+    transition: all 0.5s ease-in-out;
     touch-action: none;
     z-index: var(--z-card);
     box-shadow: 10px 10px 20px black;
-    background-color: #1a1a1a; /* Fallback */
+    background-color: #1a1a1a;
 }
 
 @media (width <= 1130px) {
@@ -42,7 +40,6 @@
     }
 }
 
-/* Stacking Logic */
 .card.active {
     z-index: 10;
     transform: scale(1) translateY(0);
@@ -52,17 +49,16 @@
 
 .card.next {
     z-index: 5;
-    transform: scale(0.92) translateY(30px); /* Smaller and slightly lower */
+    transform: scale(0.92) translateY(30px);
     opacity: 0.6;
-    pointer-events: none; /* Disable interaction */
-    filter: brightness(0.7); /* Darken the back card slightly */
+    pointer-events: none;
+    filter: brightness(0.7);
 }
 
-/* Exit Animations */
 .card.exit-left {
     transform: translateX(-120%) rotate(-10deg);
     opacity: 0;
-    z-index: 11; /* Stay on top while leaving */
+    z-index: 11;
 }
 
 .card.exit-right {
@@ -72,7 +68,6 @@
 }
 
 
-/* Gradient Overlays */
 .card::after, .card::before {
     content: '';
     position: absolute;
@@ -96,21 +91,28 @@
     opacity: 0;
 }
 
-/* Card Open State */
 .is-open::after, .is-open::before {
     opacity: 0;
 }
 
 .is-open {
     user-select: text;
-    z-index: 100; /* Ensure open card is on top */
+    z-index: 100;
 }
 
 .is-open .close-card-button {
     display: block;
+    background-color: var(--glass-bg);
+    opacity: 1;
+    backdrop-filter: blur(10px);
+    padding: 5px;
+    transition: all 0.3s ease;
 }
 
-/* Movie Title */
+.is-open .close-card-button:hover {
+    transform: scale(1.1);
+}
+
 .movie-title {
     display: flex;
     grid-area: title;
@@ -119,7 +121,6 @@
     margin: 1rem;
 }
 
-/* Emotions Rating */
 .emotions-rating {
     grid-area: rating;
     list-style: none;
@@ -136,7 +137,6 @@
     justify-content: center;
 }
 
-/* Movie Description */
 .movie-description {
     justify-self: center;
     text-indent: 2%;
@@ -146,7 +146,7 @@
     margin: 0;
     max-height: 25%;
     
-    /* Line clamping logic */
+    /* Обрезка описания до 3 строк */
     display: -webkit-box;
     -webkit-line-clamp: 3;
     line-clamp: 3;
@@ -155,7 +155,6 @@
     text-overflow: ellipsis;
 }
 
-/* Action Buttons List */
 .movie-button-list {
     gap: 2%;
     width: 70%;
@@ -181,7 +180,7 @@
     width: 40%;
 }
 
-/* Additional Info Section (Expanded Card) */
+/* Дополнительная информация (видна, когда карточка раскрыта) */
 .additional_info {
     box-sizing: border-box;
     display: none;
@@ -189,7 +188,6 @@
     height: max(200px, fit-content);
     position: absolute;
     top: 80%;
-    /* Uses theme color for gradient */
     background: linear-gradient(360deg,
         rgba(var(--theme-color-rgb), 1),
         rgba(var(--theme-color-rgb), 1),
@@ -242,7 +240,6 @@
     margin-top: 0;
 }
 
-/* Additional Info Typography */
 .additional_info__title {
     font-size: clamp(1.25rem, 0.75rem + 2.5vw, 2rem);
     font-weight: 700;
@@ -304,7 +301,6 @@
     font-weight: 700;
     font-size: clamp(0.9rem, 0.7rem + 1vw, 1.1rem);
 }
-/* Reviews Section */
 .reviews-section {
     margin-top: clamp(20px, 4vw, 30px);
     padding: 0;
@@ -431,7 +427,7 @@
     padding: 12px 20px;
     border: 2px solid rgba(var(--theme-color-rgb), 0.3);
     border-radius: 8px;
-    background: gray;
+    background: var(--glass-bg);
     backdrop-filter: blur(10px);
     color: var(--text-primary);
     font-size: 1rem;
@@ -444,8 +440,7 @@
 }
 
 .reviews-submit-btn:hover {
-    background: rgba(var(--theme-color-rgb), 0.8);
-    border-color: rgba(var(--theme-color-rgb), 0.8);
+    background: var(--glass-hover-bg);
 }
 
 .reviews-section__list {
@@ -496,7 +491,6 @@
 }
 
 
-/* Overlays */
 .overlay {
     position: absolute;
     width: 8%;
@@ -509,4 +503,12 @@
 .overlay_left {
     right: 0;
     background: linear-gradient(-90deg, rgba(var(--theme-color-rgb), 1), rgba(var(--theme-color-rgb), 0.4), rgba(var(--theme-color-rgb), 0));
+}
+
+.overlay_left, .overlay_right {
+    display: none;
+}
+
+.is-open .overlay_left, .is-open .overlay_right {
+    display: block;
 }

@@ -68,6 +68,7 @@ class Movie(BaseModel):
     country: str | None
     rating: float | None
     tmdb_id: int | None
+    embedding: list[float] | None
     reviews: list[str] | None
 
     class Config:
@@ -81,3 +82,15 @@ class FavoriteResponse(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+class EmbeddingRequest(BaseModel):
+    text: str
+
+
+class EmbeddingResponse(BaseModel):
+    embedding: list[float]
+
+
+class MovieIdsRequest(BaseModel):
+    movie_ids: list[int]

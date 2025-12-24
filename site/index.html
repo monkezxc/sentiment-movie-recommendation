@@ -14,6 +14,7 @@
 </head>
 <body>
     <div class="main-container">
+        <input type="checkbox" id="favorites-menu-toggle" class="favorites-menu-toggle visually-hidden">
         <header class="header">
             <label class="header__search-form">
                 <input type="text" class="header__search glass-panel" placeholder="Введите название фильма">
@@ -23,8 +24,7 @@
                     </svg>
                 </button>
             </label>
-            <label class="header__menu-label header__button">
-                <input type="checkbox" class="header__menu-checkbox visually-hidden"></button>
+            <label for="favorites-menu-toggle" class="header__menu-label header__button">
                 <span class="header__menu-pseudo-checkbox pseudo-checkbox glass-panel">
                     <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" class="header__menu-icon">
                         <path d="M4 18L20 18" stroke="#000000" stroke-width="2" stroke-linecap="round"/>
@@ -34,9 +34,24 @@
                 </span>
             </label>
         </header>
+        <aside class="favorites-menu">
+            <div class="favorites-menu__header">
+                <h3 class="favorites-menu__title">Понравившиеся фильмы</h3>
+                <label for="favorites-menu-toggle" class="favorites-menu__close-btn">
+                    <svg width="20px" height="20px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </label>
+            </div>
+            <div class="favorites-menu__content">
+                <ul class="favorites-list">
+                    <!-- Здесь будут названия понравившихся фильмов -->
+                </ul>
+            </div>
+        </aside>
         <main class="main">
             <div class="cards-wrapper">
-                <!-- Cards will be injected here by JS -->
+                <!-- Здесь будут карточки фильмов -->
             </div>
         </main>
         <section class="search">
@@ -56,7 +71,7 @@
         </section>
     </div>
 
-    <!-- Карточки, вставляемые JS -->
+    <!-- заготовка карточки фильма -->
     <template id="movie-card-template">
         <div class="card">
             <button type="button" class="close-card-button"></button>
@@ -165,7 +180,6 @@
         </div>
     </template>
 
-    <!-- Using unpkg for the latest version -->
     <script src="rgbaster.umd.js"></script>
     <script src="script.js" defer></script>
 </body>

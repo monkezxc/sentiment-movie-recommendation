@@ -2,7 +2,15 @@
 Модуль для работы с базой данных PostgreSQL
 """
 import os
+import json
+import sys
+from pathlib import Path
+from typing import Any, Iterable
 import psycopg2
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 
 class Database:
@@ -44,7 +52,8 @@ class Database:
                         country TEXT,
                         rating REAL,
                         tmdb_id INTEGER UNIQUE,
-                        reviews TEXT[]
+                        reviews TEXT[],
+                        embedding float[]
                     )
                 """)
                 self.conn.commit()
@@ -66,12 +75,17 @@ class Database:
         """Добавление фильма в базу данных"""
         try:
             with self.conn.cursor() as cursor:
+                print('встравляю фильм ', movie_data['title'])
+
+                reviews = self._normalize_reviews(movie_data.get("reviews"))
+                embedding = self._normalize_embedding(movie_data.get("embedding"))
+
                 cursor.execute("""
                     INSERT INTO movies (
                         title, release_year, duration, genre, director, screenwriter,
                         actors, description, horizontal_poster_url, vertical_poster_url,
-                        country, rating, tmdb_id, reviews
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        country, rating, tmdb_id, reviews, embedding
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """, (
                     movie_data['title'],
                     movie_data['release_year'],
@@ -86,13 +100,70 @@ class Database:
                     movie_data['country'],
                     movie_data['rating'],
                     movie_data['tmdb_id'],
-                    movie_data.get('reviews', '')
+                    reviews,
+                    embedding,
                 ))
+
                 self.conn.commit()
                 return True
-        except:
+        except psycopg2.Error as e:
+            print(f"[DB] Ошибка при вставке фильма: {e}")
             self.conn.rollback()
             return False
+        except Exception as e:
+            # На всякий случай, чтобы не терять реальные причины падения
+            print(f"[DB] Неожиданная ошибка при вставке фильма: {e}")
+            self.conn.rollback()
+            return False
+
+    @staticmethod
+    def _normalize_reviews(value: Any) -> list[str]:
+        """
+        Приводим отзывы к ожидаемому формату для PostgreSQL TEXT[]: list[str].
+        """
+        if value is None:
+            return []
+        if isinstance(value, list):
+            return [str(x) for x in value if x is not None and str(x).strip()]
+        if isinstance(value, str):
+            text = value.strip()
+            return [text] if text else []
+        return [str(value)]
+
+    @staticmethod
+    def _normalize_embedding(value: Any) -> list[float] | None:
+        """
+        Приводим эмбеддинг к list[float] (PostgreSQL float[]).
+        Разрешаем: list[float], tuple, строку вида "[0.1, 0.2]" (JSON).
+        """
+        if value is None:
+            return None
+
+        # Уже список/кортеж чисел
+        if isinstance(value, (list, tuple)):
+            try:
+                return [float(x) for x in value]
+            except (TypeError, ValueError):
+                return None
+
+        # Иногда эмбеддинг приходит строкой
+        if isinstance(value, str):
+            text = value.strip()
+            if not text:
+                return None
+            try:
+                parsed = json.loads(text)
+            except json.JSONDecodeError:
+                return None
+            if isinstance(parsed, list):
+                try:
+                    return [float(x) for x in parsed]
+                except (TypeError, ValueError):
+                    return None
+            return None
+
+        # Остальное — не поддерживаем
+        return None
 
     def close(self):
         """Закрытие соединения с базой данных"""

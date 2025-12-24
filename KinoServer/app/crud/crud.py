@@ -46,7 +46,6 @@ async def get_movies_by_word(search: str, skip: int, user_id: str, limit: int, s
     if liked_ids:
         stmt = stmt.where(Movie.id.not_in(liked_ids))
 
-    # Apply search filter (case-insensitive)
     # Используем ilike для поиска без учета регистра (важно для кириллицы)
     stmt = stmt.where(Movie.title.ilike(f'%{search}%'))
         
@@ -147,4 +146,38 @@ async def get_dislikes(user_id: str, session: AsyncSession):
     fav = await get_favorite_by_user(user_id, session)
     return fav.disliked_movies if fav else []
 
+async def get_movies_by_query(skip: int, limit: int, session: AsyncSession):
+    stmt = select(Movie.id, Movie.embedding)
+    # Фильтруем только фильмы с эмбеддингами (не None)
+    stmt = stmt.where(Movie.embedding.isnot(None))
+    stmt = stmt.offset(skip).limit(limit)
+    result = await session.execute(stmt)
+    
+    # Получаем все строки как кортежи (id, embedding)
+    rows = result.all()
+    
+    # Формируем список словарей с id и embedding
+    movies_data = [
+        {"id": row[0], "embedding": row[1]} 
+        for row in rows
+    ]
+    
+    return {"data": movies_data}
 
+
+async def get_movies_by_ids(movie_ids: list[int], session: AsyncSession):
+    """
+    Получает фильмы по списку ID с сохранением порядка.
+    """
+    if not movie_ids:
+        return []
+    
+    stmt = select(Movie).where(Movie.id.in_(movie_ids))
+    result = await session.execute(stmt)
+    movies = result.scalars().all()
+    
+    # Создаем словарь для быстрого доступа по id
+    movies_dict = {movie.id: movie for movie in movies}
+    
+    # Возвращаем фильмы в порядке переданных ID
+    return [movies_dict[movie_id] for movie_id in movie_ids if movie_id in movies_dict]

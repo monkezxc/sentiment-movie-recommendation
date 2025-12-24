@@ -4,7 +4,7 @@
 import os
 import requests
 from typing import List, Optional, Dict
-from googletrans import Translator
+from deep_translator import GoogleTranslator
 
 
 class KinopoiskClient:
@@ -12,7 +12,7 @@ class KinopoiskClient:
         self.api_key = os.getenv('KINOPOISK_API_KEY', 'KINOPOISK_API_KEY')
         self.base_url = "https://kinopoiskapiunofficial.tech/api"
         self.reviews_to_parse = int(os.getenv('REVIEWS_TO_PARSE', 5))
-        self.translator = Translator()
+        self.translator = GoogleTranslator(source='auto', target='ru')
 
     def get_reviews(self, kinopoisk_id: int) -> List[str]:
         """Получение отзывов для фильма по ID Кинопоиска"""
@@ -42,7 +42,7 @@ class KinopoiskClient:
                     params = {"filmId": kinopoisk_id, "page": 1}
                 
                 try:
-                    response = requests.get(url, headers=headers, params=params)
+                    response = requests.get(url, headers=headers, params=params, timeout=10)
                     url_used = url
                     if response.status_code == 200:
                         break
@@ -61,7 +61,7 @@ class KinopoiskClient:
                     alt_url = f"{self.base_url}/v2.2/films/{kinopoisk_id}/reviews"
                     alt_params = {"page": 1}
                     try:
-                        response = requests.get(alt_url, headers=headers, params=alt_params)
+                        response = requests.get(alt_url, headers=headers, params=alt_params, timeout=10)
                         if response.status_code != 200:
                             return []
                     except:
@@ -113,8 +113,8 @@ class KinopoiskClient:
         # Пытаемся перевести с 3 попытками
         for attempt in range(1, 4):
             try:
-                translated = self.translator.translate(text, src='auto', dest='ru')
-                return translated.text
+                translated = self.translator.translate(text)
+                return translated
             except:
                 if attempt == 3:
                     return text
@@ -135,7 +135,7 @@ class KinopoiskClient:
                 "accept": "application/json"
             }
             
-            response = requests.get(url, headers=headers)
+            response = requests.get(url, headers=headers, timeout=10)
             response.raise_for_status()
             data = response.json()
             
@@ -161,7 +161,7 @@ class KinopoiskClient:
                 "keyword": imdb_id
             }
             
-            response = requests.get(url, headers=headers, params=params)
+            response = requests.get(url, headers=headers, params=params, timeout=10)
             if response.status_code == 200:
                 data = response.json()
                 if data.get('films'):
@@ -182,7 +182,7 @@ class KinopoiskClient:
                 "keyword": title
             }
             
-            response = requests.get(url, headers=headers, params=params)
+            response = requests.get(url, headers=headers, params=params, timeout=10)
             response.raise_for_status()
             data = response.json()
             

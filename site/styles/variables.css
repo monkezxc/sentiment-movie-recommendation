@@ -1,17 +1,12 @@
 :root {
-    /* Theme Colors */
-    --theme-color-rgb: 27, 36, 33; /* Used for gradients */
+    --theme-color-rgb: 27, 36, 33;
     --text-primary: aliceblue;
     
-    /* Typography */
     --font-main: "Unbounded", sans-serif;
     
-    /* Backgrounds */
-    /* Using absolute paths based on project structure */
     --bg-body-image: url(/site/images/body_background.jpg);
     --bg-card-image: url(/site/images/card_bg.jpg);
     
-    /* Layout Z-Indices */
     --z-header: 2;
     --z-card: 5;
     --z-close-btn: 2;

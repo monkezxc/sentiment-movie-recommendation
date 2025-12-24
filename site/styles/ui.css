@@ -1,17 +1,19 @@
 :root {
-    /* Glass Morphism Variables */
     --glass-bg: rgba(255, 255, 255, 0.12);
+    --glass-bg-rgb: 255, 255, 255;
+    --glass-bg-alpha: 0.12;
     --glass-border-color: rgba(255, 255, 255, 0.35);
+    --glass-border-rgb: 255, 255, 255;
+    --glass-border-alpha: 0.35;
     --glass-highlight: rgba(255, 255, 255, 0.6);
     --glass-shadow: rgba(0, 0, 0, 0.45);
     --glass-hover-bg: rgba(255, 255, 255, 0.18);
+    --glass-blur: 18px;
     
-    /* UI Dimensions */
     --border-radius-glass: 2.8%;
     --border-radius-btn: 8px;
 }
 
-/* Glass Panel Base */
 .glass-panel {
     position: relative;
     background: var(--glass-bg);
@@ -23,7 +25,6 @@
     overflow: hidden;
 }
 
-/* Glass Highlight Effect (Top) */
 .glass-panel::before {
     content: "";
     position: absolute;
@@ -38,7 +39,6 @@
     pointer-events: none;
 }
 
-/* Liquid Droplet Accent */
 .glass-panel::after {
     content: "";
     position: absolute;
@@ -53,7 +53,6 @@
     pointer-events: none;
 }
 
-/* Glass Buttons */
 .glass-button {
     display: inline-flex;
     align-items: center;
@@ -71,7 +70,6 @@
     background: var(--glass-hover-bg);
 }
 
-/* Generic Button Reset */
 .button {
     width: 100%;
     height: 100%;
@@ -80,7 +78,6 @@
     cursor: pointer;
 }
 
-/* Pseudo Checkbox (Header Buttons) */
 .pseudo-checkbox {
     display: flex;
     width: 100%;
@@ -88,32 +85,31 @@
     border-radius: 25%;
 }
 
-/* Close Button */
 .close-card-button {
     position: absolute;
     display: none;
     z-index: var(--z-close-btn);
     top: 15px;
     right: 15px;
-    width: 3%;
+    width: clamp(20px, 3vw, 60px);
     aspect-ratio: 1/1;
     background-image: url(/site/images/cross.png);
-    background-size: cover;
+    background-size: 80%;
     background-position: center;
     background-repeat: no-repeat;
     background-color: transparent;
     border: none;
     cursor: pointer;
+    border-radius: 3px;
 }
 
-/* Inputs and Filters */
 .emotions-filter {
     display: flex;
     height: 35%;
     min-width: 130px;
     border-radius: 8px;
     flex-grow: .3;
-    color: inherit; /* Ensure text color inherits or is visible */
+    color: inherit;
 }
 
 .text-search {
