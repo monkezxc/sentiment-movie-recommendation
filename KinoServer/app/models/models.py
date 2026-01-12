@@ -1,17 +1,18 @@
-from sqlalchemy import Integer, JSON, String, Float
+from sqlalchemy import Integer, JSON, String, Float, BigInteger
 from sqlalchemy.ext.mutable import MutableList
 from sqlalchemy.orm import Mapped, mapped_column
 from app.db.db import Base
 
 
 class Favorite(Base):
+    # Единая таблица с ботом: bot создаёт/заполняет пользователя, KinoServer только обновляет лайки/дизлайки.
     __tablename__ = "favorite"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
 
-    user_id: Mapped[str] = mapped_column(
-        String, unique=True, index=True, nullable=False
-    )
+    telegram_id: Mapped[int] = mapped_column(BigInteger, unique=True, nullable=False)
+    user_id: Mapped[str] = mapped_column(String, unique=True, index=True, nullable=False)
+    link: Mapped[str] = mapped_column(String, unique=True, nullable=False)
 
     liked_movies: Mapped[list[int]] = mapped_column(
         MutableList.as_mutable(JSON), nullable=False, default=list
@@ -20,6 +21,7 @@ class Favorite(Base):
     disliked_movies: Mapped[list[int]] = mapped_column(
         MutableList.as_mutable(JSON), nullable=False, default=list
     )
+    username: Mapped[str] = mapped_column(String, nullable=False)
 
     def __repr__(self):
         return f"<Favorite user_id={self.user_id}>"
@@ -58,7 +60,10 @@ class Review(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     movie_id: Mapped[int] = mapped_column(Integer, nullable=False)
     text: Mapped[str] = mapped_column(String, nullable=False)
-    user_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    # user_id для отзывов больше не используем (отображаем username).
+    # Оставляем колонку опциональной для совместимости со старой БД.
+    user_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    username: Mapped[str | None] = mapped_column(String, nullable=True)
     sadness_rating: Mapped[int] = mapped_column(Integer, nullable=True)
     optimism_rating: Mapped[int] = mapped_column(Integer, nullable=True)
     fear_rating: Mapped[int] = mapped_column(Integer, nullable=True)

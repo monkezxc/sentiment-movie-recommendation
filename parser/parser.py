@@ -6,10 +6,11 @@ import sys
 import requests
 
 from dotenv import load_dotenv
-from database import Database
+from collections import defaultdict
+
+from database import Database, get_review_emotion
 from tmdb_client import TMDBClient
 from kinopoisk_client import KinopoiskClient
-
 
 def get_embedding_from_api(text: str, api_url: str = "http://127.0.0.1:5001") -> list[float]:
     """
@@ -30,6 +31,45 @@ def get_embedding_from_api(text: str, api_url: str = "http://127.0.0.1:5001") ->
     except Exception as e:
         print(f"Ошибка при получении эмбеддинга: {e}")
         raise
+
+def get_top_emotions_from_reviews(
+    reviews: list[str],
+    api_url: str = "http://127.0.0.1:5001",
+    top_n: int = 3,
+    max_reviews: int = 30,
+) -> list[str]:
+    """
+    Получаем топ-N эмоций из отзывов (по суммарной уверенности модели).
+
+    - Чтобы не перегружать модель, анализируем только первые `max_reviews` отзывов.
+    - Используем тот же эндпоинт, что и при заполнении таблицы `reviews`: POST /movies/review-emotion
+    """
+    if not reviews:
+        return []
+
+    scores: dict[str, float] = defaultdict(float)
+
+    for review in reviews[:max_reviews]:
+        text = (review or "").strip()
+        if not text:
+            continue
+
+        try:
+            emotion, confidence = get_review_emotion(text, api_url=api_url)
+        except Exception:
+            # Если модель/сервер недоступны, просто пропускаем этот отзыв.
+            continue
+
+        # Вес = уверенность модели (0..1). Можно заменить на (10 * confidence),
+        # но для сортировки это эквивалентно.
+        scores[emotion] += float(confidence)
+
+    if not scores:
+        return []
+
+    # Сортируем по убыванию суммарного веса.
+    top = sorted(scores.items(), key=lambda kv: kv[1], reverse=True)[:top_n]
+    return [emotion for emotion, _ in top]
 
 class MovieParser:
     def __init__(self):
@@ -64,7 +104,6 @@ class MovieParser:
                     break
 
                 movie_id = movie.get('id')
-                print(movie_id)
                 
                 # Проверяем, есть ли уже такой фильм в базе
                 if self.db.movie_exists(movie_id):
@@ -80,7 +119,7 @@ class MovieParser:
                 parsed_data = self.tmdb.parse_movie_data(details)
                 
                 if parsed_data:
-                    print(parsed_data['title'])
+                    print(f"найден фильм: {parsed_data['title']}")
 
                 if parsed_data is None:
                     continue
@@ -93,12 +132,13 @@ class MovieParser:
                 
                 if kinopoisk_id:
                     reviews = self.kinopoisk.get_reviews(kinopoisk_id)
-                    # В БД ждём список строк (TEXT[] в PostgreSQL / JSON list в KinoServer)
                     parsed_data['reviews'] = reviews if reviews else []
                 else:
                     parsed_data['reviews'] = []
 
                 # Получаем эмбеддинг через API сервера
+                # Важно: добавляем к тексту топ-3 эмоции по отзывам — это помогает семантическому поиску
+                # учитывать "вайб" фильма, извлечённый из пользовательских мнений.
                 embedding_text = f"""
                 {parsed_data['description']}
                 {parsed_data['genre']}
@@ -107,6 +147,17 @@ class MovieParser:
                 {parsed_data['actors']}
                 год выпуска {parsed_data['release_year']}
                 """
+
+                # Топ-3 эмоции из отзывов (если отзывы есть).
+                top_emotions = get_top_emotions_from_reviews(
+                    parsed_data.get("reviews", []),
+                    api_url=os.getenv("EMBEDDING_API_URL", "http://127.0.0.1:5001"),
+                    top_n=3,
+                    max_reviews=int(os.getenv("EMBEDDING_REVIEWS_MAX", "30")),
+                )
+                if top_emotions:
+                    embedding_text += "\n" + "Эмоции в отзывах (топ-3): " + ", ".join(top_emotions) + "\n"
+
                 try:
                     parsed_data['embedding'] = get_embedding_from_api(
                         embedding_text,

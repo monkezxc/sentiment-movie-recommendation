@@ -146,6 +146,13 @@ body {
     padding: 2% 2.5% 1.5% 2.5%;
 }
 
+.search textarea::placeholder {
+    color: rgba(var(--theme-color-rgb), 0.85);
+    font-family: var(--font-main);
+    font-size: 13px;
+    padding: 5px;
+}
+
 .favorites-menu {
     position: fixed;
     top: 0;
@@ -227,6 +234,19 @@ body {
     display: flex;
     flex-direction: column;
     gap: 4px;
+}
+
+.favorites-movie__emotions {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 6px;
+    font-size: 12px;
+    color: rgba(var(--theme-color-rgb), 0.85);
+}
+
+.favorites-movie__emotions .emotion-line {
+    line-height: 1.2;
 }
 
 .favorites-movie__title {

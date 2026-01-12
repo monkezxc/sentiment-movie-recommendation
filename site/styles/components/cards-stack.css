@@ -1,0 +1,94 @@
+/* Карточки: контейнер стека, базовая карточка и состояния (active/next/exit). */
+
+.cards-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.card {
+    position: absolute;
+    color: var(--text-primary);
+    display: grid;
+    grid-template-rows: 5% 5% 1fr 12%;
+    grid-template-areas: 
+        'title'
+        'rating'
+        'description'
+        'buttons';
+    width: 80%;
+    height: 100%;
+    grid-area: card;
+    border-radius: 20px;
+    background-image: var(--bg-card-image);
+    background-size: 100% auto;
+    background-position: center;
+    background-repeat: no-repeat;
+    user-select: none;
+    transition: all 0.5s ease-in-out;
+    touch-action: none;
+    z-index: var(--z-card);
+    box-shadow: 10px 10px 20px black;
+    background-color: #1a1a1a;
+}
+
+@media (width <= 1130px) {
+    .card {
+        background-size: auto 100%;
+    }
+}
+
+.card.active {
+    z-index: 10;
+    transform: scale(1) translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.card.next {
+    z-index: 5;
+    transform: scale(0.92) translateY(30px);
+    opacity: 0.6;
+    pointer-events: none;
+    filter: brightness(0.7);
+}
+
+.card.exit-left {
+    transform: translateX(-120%) rotate(-10deg);
+    opacity: 0;
+    z-index: 11;
+}
+
+.card.exit-right {
+    transform: translateX(120%) rotate(10deg);
+    opacity: 0;
+    z-index: 11;
+}
+
+.card::after, .card::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    border-radius: inherit;
+    height: 50%;
+    background: linear-gradient(360deg, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0));
+    z-index: -1;
+    opacity: 1;
+    transition: opacity 0.5s;
+}
+
+.card::before {
+    top: 0;
+    height: 20%;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0));
+}
+
+/* Финальная карточка (когда фильмы закончились). */
+.end-card::after, .end-card::before {
+    opacity: 0;
+}
+

@@ -1,0 +1,137 @@
+/* Дополнительная информация (видна, когда карточка раскрыта). */
+
+.additional_info {
+    box-sizing: border-box;
+    display: none;
+    width: 100%;
+    height: max(200px, fit-content);
+    position: absolute;
+    top: 80%;
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+    display: flex;
+    flex-direction: column;
+    font-size: 18px;
+    padding: 0;
+    z-index: 20;
+}
+
+.additional_info__top {
+    /* Градиент заканчивается ДО секции отзывов */
+    background: linear-gradient(
+        180deg,
+        rgba(var(--theme-color-rgb), 0) 0%,
+        rgba(var(--theme-color-rgb), 0.75) 55%,
+        rgba(var(--theme-color-rgb), 1) 100%
+    );
+    padding: 0 45px clamp(20px, 4vw, 30px) 45px;
+}
+
+/* Топ-3 эмоции в открытой карточке */
+.additional_info__emotions {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+@media (width <= 768px) {
+    :root {
+        font-size: 18px;
+    }
+
+    .additional_info {
+        padding: 0;
+    }
+
+    .additional_info__top {
+        padding: 0 35px clamp(20px, 4vw, 30px) 35px;
+    }
+}
+
+@media (width <= 425px) {
+    :root {
+        font-size: 10px;
+    }
+
+    .additional_info {
+        padding: 0;
+    }
+
+    .additional_info__top {
+        padding: 0 25px clamp(20px, 4vw, 30px) 25px;
+    }
+}
+
+.additional_info__item {
+    margin-top: clamp(12px, 2vw, 18px);
+    width: 100%;
+    font-size: clamp(0.75rem, 0.5rem + 1.25vw, 1rem);
+}
+
+.additional_info__item:first-child {
+    margin-top: 0;
+}
+
+.additional_info__title {
+    font-size: clamp(1.25rem, 0.75rem + 2.5vw, 2rem);
+    font-weight: 700;
+    margin-bottom: clamp(8px, 1.5vw, 15px);
+}
+
+.movie-year {
+    display: inline;
+    font-size: clamp(0.6rem, 0.4rem + 1vw, 0.8rem);
+    font-weight: 400;
+    margin-left: clamp(5px, 1vw, 10px);
+}
+
+.additional_info__director {
+    font-size: clamp(0.875rem, 0.625rem + 1.25vw, 1.125rem);
+    font-weight: 700;
+    margin-bottom: clamp(8px, 1.5vw, 12px);
+}
+
+.additional_info__director::before {
+    content: 'Режиссёр: ';
+    font-size: clamp(0.75rem, 0.5rem + 1.25vw, 0.9rem);
+    font-weight: 400;
+    margin-right: clamp(5px, 1vw, 8px);
+}
+
+.additional_info__description {
+    padding-top: clamp(10px, 2vw, 15px);
+    line-height: 1.4;
+    margin-bottom: clamp(8px, 1.5vw, 12px);
+}
+
+.additional_info__cast {
+    margin-bottom: clamp(8px, 1.5vw, 12px);
+}
+
+.additional_info__cast::before {
+    content: 'Актеры: ';
+    font-weight: 700;
+    font-size: clamp(0.9rem, 0.7rem + 1vw, 1.1rem);
+}
+
+.additional_info__genres {
+    margin-bottom: clamp(8px, 1.5vw, 12px);
+}
+
+.additional_info__genres::before {
+    content: 'Жанр: ';
+    font-weight: 700;
+    font-size: clamp(0.9rem, 0.7rem + 1vw, 1.1rem);
+}
+
+.additional_info__rating {
+    margin-bottom: clamp(8px, 1.5vw, 12px);
+}
+
+.additional_info__rating::before {
+    content: 'Рейтинг: ';
+    font-weight: 700;
+    font-size: clamp(0.9rem, 0.7rem + 1vw, 1.1rem);
+}
+

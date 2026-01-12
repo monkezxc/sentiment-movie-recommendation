@@ -1,0 +1,57 @@
+.user-not-found-stub[hidden] {
+    display: none !important;
+}
+
+.user-not-found-stub {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.not-found__title {
+    position: relative;
+    transform: translateY(-60%);
+    font-size: clamp(25px, 1.2014rem + 1.5408vw, 40px);
+    margin: 0;
+    margin-bottom: 20px;
+}
+
+.not-found__subtitle {
+    font-size: clamp(20px, 0.9611rem + 1.2327vw, 28px);
+    margin: 0;
+    position: relative;
+    transform: translateY(-20%);
+}
+
+.not-found__button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: fit-content;
+}
+
+.not-found__button_picture {
+    width: clamp(150px, 40%, 250px);
+    height: clamp(50px, 10%, 100px);
+    margin-top: 50px;
+    border-radius: 20px;
+}
+
+.not-found__button_tg_logo {
+    margin: 0;
+    margin-left: -8px;
+}
+
+.not-found__button_picture_text {
+    font-size: 14px;
+    padding-left: 8px;
+    box-sizing: border-box;
+    color: black;
+    text-decoration: none;
+}

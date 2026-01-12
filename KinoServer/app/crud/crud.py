@@ -3,6 +3,11 @@ from sqlalchemy import select
 from app.models.models import Favorite, Movie, Review
 
 # Функции для фильмов
+async def get_all_movies_id(session: AsyncSession):
+    stmt = select(Movie.tmdb_id)
+    result = await session.execute(stmt)
+    return result.scalars().all()
+
 async def get_movies(skip: int, user_id: str, limit: int, session: AsyncSession):
     # Сначала получаем список дизлайкнутых фильмов
     dislikes_stmt = select(Favorite.disliked_movies).where(Favorite.user_id == user_id)
@@ -59,17 +64,180 @@ async def get_favorite_by_user(user_id: str, session: AsyncSession):
     return result.scalar_one_or_none()
 
 # Функции для отзывов
-async def get_reviews(movie_id: int, session: AsyncSession):
-    stmt = select(Review).where(Review.movie_id == movie_id)
+async def get_reviews(tmdb_id: int, session: AsyncSession):
+    # Новые отзывы первыми (обратный порядок)
+    stmt = (
+        select(Review)
+        .where(Review.movie_id == tmdb_id)
+        .order_by(Review.id.desc())
+    )
     result = await session.execute(stmt)
     reviews = result.scalars().all()
     return reviews
 
+async def get_emotion_ratings(tmdb_id: int, session: AsyncSession) -> dict[str, list[int]]:
+    """
+    Получить рейтинги эмоций для фильма по tmdb_id.
+    Возвращает словарь: {'emotion_name': [rating1, rating2, ...]}
+    Только ненулевые рейтинги.
+    """
+    stmt = select(
+        Review.sadness_rating,
+        Review.optimism_rating,
+        Review.fear_rating,
+        Review.anger_rating,
+        Review.neutral_rating,
+        Review.worry_rating,
+        Review.love_rating,
+        Review.fun_rating,
+        Review.boredom_rating
+    ).where(Review.movie_id == tmdb_id)
+
+    result = await session.execute(stmt)
+    rows = result.all()
+
+    # Инициализируем словарь для каждой эмоции
+    emotion_ratings = {
+        'sadness': [],
+        'optimism': [],
+        'fear': [],
+        'anger': [],
+        'neutral': [],
+        'worry': [],
+        'love': [],
+        'fun': [],
+        'boredom': []
+    }
+
+    # Заполняем рейтинги из результатов запроса
+    for row in rows:
+        sadness, optimism, fear, anger, neutral, worry, love, fun, boredom = row
+
+        if sadness and sadness > 0:
+            emotion_ratings['sadness'].append(sadness)
+        if optimism and optimism > 0:
+            emotion_ratings['optimism'].append(optimism)
+        if fear and fear > 0:
+            emotion_ratings['fear'].append(fear)
+        if anger and anger > 0:
+            emotion_ratings['anger'].append(anger)
+        if neutral and neutral > 0:
+            emotion_ratings['neutral'].append(neutral)
+        if worry and worry > 0:
+            emotion_ratings['worry'].append(worry)
+        if love and love > 0:
+            emotion_ratings['love'].append(love)
+        if fun and fun > 0:
+            emotion_ratings['fun'].append(fun)
+        if boredom and boredom > 0:
+            emotion_ratings['boredom'].append(boredom)
+
+    return emotion_ratings
+
+async def get_avg_emotion_ratings(tmdb_id: int, session: AsyncSession) -> dict[str, float] | None:
+    """
+    Получить средние рейтинги эмоций для фильма по tmdb_id из таблицы ratings.
+    Возвращает словарь: {'sadness': 3.5, 'optimism': 7.2, ...} или None если фильм не найден.
+    """
+    from sqlalchemy import text
+
+    # Используем raw SQL для запроса к таблице ratings
+    query = text("""
+        SELECT sadness_avg, optimism_avg, fear_avg, anger_avg, neutral_avg,
+               worry_avg, love_avg, fun_avg, boredom_avg
+        FROM ratings
+        WHERE movie_id = :movie_id
+    """)
+
+    result = await session.execute(query, {"movie_id": tmdb_id})
+    row = result.fetchone()
+
+    if row:
+        sadness, optimism, fear, anger, neutral, worry, love, fun, boredom = row
+        return {
+            'sadness': float(sadness),
+            'optimism': float(optimism),
+            'fear': float(fear),
+            'anger': float(anger),
+            'neutral': float(neutral),
+            'worry': float(worry),
+            'love': float(love),
+            'fun': float(fun),
+            'boredom': float(boredom)
+        }
+
+    return None
+
+async def get_movies_by_emotion(emotion: str, skip: int, limit: int, session: AsyncSession) -> list[Movie]:
+    """
+    Получить фильмы, отсортированные по рейтингу указанной эмоции (от большего к меньшему).
+    Возвращает только фильмы с рейтингом эмоции > 0.
+    """
+    from sqlalchemy import text
+
+    # Словарь для маппинга названий эмоций на колонки в БД
+    emotion_columns = {
+        'sadness': 'sadness_avg',
+        'optimism': 'optimism_avg',
+        'fear': 'fear_avg',
+        'anger': 'anger_avg',
+        'neutral': 'neutral_avg',
+        'worry': 'worry_avg',
+        'love': 'love_avg',
+        'fun': 'fun_avg',
+        'boredom': 'boredom_avg'
+    }
+
+    if emotion not in emotion_columns:
+        return []
+
+    column_name = emotion_columns[emotion]
+
+    # Получаем фильмы с рейтингом эмоции > 0, отсортированные по убыванию
+    query = text(f"""
+        SELECT m.id, m.title, m.release_year, m.duration, m.genre, m.director,
+               m.screenwriter, m.actors, m.description, m.horizontal_poster_url,
+               m.vertical_poster_url, m.country, m.rating, m.tmdb_id, m.embedding, m.reviews
+        FROM movies m
+        JOIN ratings r ON m.tmdb_id = r.movie_id
+        WHERE r.{column_name} > 0
+        ORDER BY r.{column_name} DESC
+        LIMIT :limit OFFSET :skip
+    """)
+
+    result = await session.execute(query, {"limit": limit, "skip": skip})
+    rows = result.all()
+
+    # Преобразуем результаты в объекты Movie
+    movies = []
+    for row in rows:
+        movie = Movie(
+            id=row[0],
+            title=row[1],
+            release_year=row[2],
+            duration=row[3],
+            genre=row[4],
+            director=row[5],
+            screenwriter=row[6],
+            actors=row[7],
+            description=row[8],
+            horizontal_poster_url=row[9],
+            vertical_poster_url=row[10],
+            country=row[11],
+            rating=row[12],
+            tmdb_id=row[13],
+            embedding=row[14],
+            reviews=row[15]
+        )
+        movies.append(movie)
+
+    return movies
+
 async def add_review(
-    movie_id: int,
-    user_id:int,
+    tmdb_id: int,
     text: str,
     session: AsyncSession,
+    username: str | None = None,
     sadness_rating: int = 0,
     optimism_rating: int = 0,
     fear_rating: int = 0,
@@ -81,7 +249,7 @@ async def add_review(
     boredom_rating: int = 0):
 
     # Создаем запись в таблице reviews
-    rev = Review(movie_id = movie_id, user_id = user_id, text = text,
+    rev = Review(movie_id = tmdb_id, username=username, text = text,
                 sadness_rating = sadness_rating, optimism_rating = optimism_rating,
                 fear_rating = fear_rating, anger_rating = anger_rating, neutral_rating = neutral_rating,
                 worry_rating = worry_rating, love_rating = love_rating, fun_rating = fun_rating,
@@ -97,9 +265,9 @@ async def add_like(user_id: str, movie_id: int, session: AsyncSession):
     changed = False
 
     if not fav:
-        fav = Favorite(user_id=user_id, liked_movies=[], disliked_movies=[])
-        session.add(fav)
-        changed = True
+        # ВАЖНО: строку пользователя в favorite создаёт бот (там NOT NULL telegram_id/link/username).
+        # KinoServer не должен создавать "пустого" пользователя, иначе падаем на NOT NULL.
+        return None
 
     if movie_id in fav.disliked_movies:
         fav.disliked_movies.remove(movie_id)
@@ -120,9 +288,8 @@ async def add_dislike(user_id: str, movie_id: int, session: AsyncSession):
     changed = False
 
     if not fav:
-        fav = Favorite(user_id=user_id, liked_movies=[], disliked_movies=[])
-        session.add(fav)
-        changed = True
+        # См. комментарий в add_like()
+        return None
 
     if movie_id in fav.liked_movies:
         fav.liked_movies.remove(movie_id)

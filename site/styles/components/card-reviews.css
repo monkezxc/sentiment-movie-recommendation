@@ -1,0 +1,247 @@
+/* Секция отзывов и элементы формы внутри открытой карточки. */
+
+.reviews-section {
+    /* Фон секции отзывов — тот же, что "конечный" цвет градиента */
+    background: rgba(var(--theme-color-rgb), 1);
+    margin-top: 0;
+    padding: 0 45px clamp(20px, 4vw, 30px) 45px;
+    position: relative;
+}
+
+@media (width <= 768px) {
+    .reviews-section {
+        padding: 0 35px clamp(20px, 4vw, 30px) 35px;
+    }
+}
+
+@media (width <= 425px) {
+    .reviews-section {
+        padding: 0 25px clamp(20px, 4vw, 30px) 25px;
+    }
+}
+
+.reviews-section__title {
+    font-size: clamp(1.25rem, 0.5rem + 3vw, 2rem);
+    font-weight: 700;
+    margin-bottom: 20px;
+}
+
+.reviews-section__input-wrapper {
+    margin-bottom: 20px;
+}
+
+.reviews-section__input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid rgba(var(--theme-color-rgb), 0.3);
+    border-radius: 8px;
+    backdrop-filter: blur(10px);
+    font-size: 1rem;
+    font-family: inherit;
+    transition: border-color 0.3s ease;
+    box-sizing: border-box;
+    resize: vertical;
+    min-height: 80px;
+}
+
+.reviews-section__input:focus {
+    outline: none;
+}
+
+.reviews-section__emotions-wrapper {
+    margin-top: 15px;
+}
+
+.emotion-input-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.emotion-input-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.emotion-select,
+.rating-select {
+    padding: 8px 12px;
+    border: 2px solid rgba(var(--theme-color-rgb), 0.3);
+    border-radius: 6px;
+    backdrop-filter: blur(10px);
+    color: black;
+    font-size: 0.9rem;
+    font-family: inherit;
+    transition: border-color 0.3s ease;
+    min-width: 120px;
+}
+
+.emotion-select:focus,
+.rating-select:focus {
+    outline: none;
+    border-color: rgba(var(--theme-color-rgb), 0.8);
+}
+
+.emotion-remove-btn {
+    width: 30px;
+    height: 30px;
+    border: 2px solid rgba(var(--theme-color-rgb), 0.3);
+    border-radius: 50%;
+    backdrop-filter: blur(10px);
+    color: black;
+    font-size: 1.2rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.emotion-remove-btn:hover:not(:disabled) {
+    background: rgba(255, 0, 0, 0.8);
+    border-color: rgba(255, 0, 0, 1);
+}
+
+.emotion-remove-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.emotion-add-btn {
+    padding: 8px 16px;
+    border: 2px solid rgba(var(--theme-color-rgb), 0.3);
+    border-radius: 6px;
+    background: rgba(var(--theme-color-rgb), 0.8);
+    backdrop-filter: blur(10px);
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    font-family: inherit;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.emotion-add-btn:hover:not(:disabled) {
+    background: rgba(var(--theme-color-rgb), 0.8);
+    border-color: rgba(var(--theme-color-rgb), 1);
+}
+
+.emotion-add-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.reviews-submit-btn {
+    width: 100%;
+    padding: 12px 20px;
+    border: 2px solid rgba(var(--theme-color-rgb), 0.3);
+    border-radius: 8px;
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    color: var(--text-primary);
+    font-size: 1rem;
+    font-family: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+.reviews-submit-btn:hover {
+    background: var(--glass-hover-bg);
+}
+
+.reviews-section__list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.reviews-section__item {
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 15px;
+    background-color: black;
+}
+
+.reviews-section__item:last-child {
+    margin-bottom: 0;
+}
+
+.review-user-info {
+    margin-bottom: 12px;
+}
+
+.review-username {
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.review-emotions {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
+
+.review-emotion {
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.review-text-container {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    line-height: 2.5;
+    text-indent: 1.5em;
+    font-weight: 200;
+    letter-spacing: 0.05em;
+    text-wrap: balance;
+}
+
+.review-text {
+    line-height: 1.5;
+    margin: 0;
+    font-size: 1rem;
+    transition: max-height 0.3s ease;
+    overflow: hidden;
+}
+
+.review-text.collapsed {
+    max-height: 10em; /* ~2-3 строки */
+    display: -webkit-box;
+    -webkit-line-clamp: 10;
+    line-clamp: 10;
+    -webkit-box-orient: vertical;
+}
+
+.review-text.expanded {
+    max-height: none;
+}
+
+.review-toggle-btn {
+    background: none;
+    border: none;
+    color: rgba(200, 200, 200, 0.8); /* Светло-серый текст */
+    font-size: 0.85rem;
+    font-family: inherit;
+    cursor: pointer;
+    padding: 2px 0;
+    margin-top: 8px;
+    transition: color 0.3s ease;
+    align-self: flex-end; /* Позиционирование в правом углу */
+    text-align: right;
+}
+
+.review-toggle-btn:hover {
+    color: rgba(255, 255, 255, 0.9); /* Более светлый при наведении */
+}
+

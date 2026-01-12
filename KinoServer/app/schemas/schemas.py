@@ -8,7 +8,7 @@ class MovieAction(BaseModel):
 class ReviewCreate(BaseModel):
     movie_id: int
     text: str
-    user_id: int
+    username: str | None = None
     sadness_rating: int = 0
     optimism_rating: int = 0
     fear_rating: int = 0
@@ -22,7 +22,8 @@ class ReviewCreate(BaseModel):
 
 class ReviewRequest(BaseModel):
     text: str
-    user_id: int
+    # username нужен для отображения автора отзыва
+    username: str | None = None
     sadness_rating: int = 0
     optimism_rating: int = 0
     fear_rating: int = 0
@@ -38,7 +39,7 @@ class ReviewResponse(BaseModel):
     id: int
     movie_id: int
     text: str
-    user_id: int
+    username: str | None = None
     sadness_rating: int
     optimism_rating: int
     fear_rating: int
@@ -94,3 +95,18 @@ class EmbeddingResponse(BaseModel):
 
 class MovieIdsRequest(BaseModel):
     movie_ids: list[int]
+
+
+class ReviewEmotionRequest(BaseModel):
+    """
+    Запрос для определения эмоции по тексту отзыва.
+    """
+    text: str
+
+
+class ReviewEmotionResponse(BaseModel):
+    """
+    Ответ: основная эмоция и уверенность модели.
+    """
+    emotion: str
+    confidence: float

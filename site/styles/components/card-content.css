@@ -1,0 +1,69 @@
+/* Контент закрытой карточки: заголовок, эмоции, описание, кнопки. */
+
+.movie-title {
+    display: flex;
+    grid-area: title;
+    justify-content: center;
+    font-size: clamp(1.5rem, 0.9222rem + 2.4653vw, 2.5rem);
+    margin: 1rem;
+}
+
+.emotions-rating {
+    grid-area: rating;
+    list-style: none;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    gap: 3%;
+}
+
+.movie-description-wrapper {
+    display: flex;
+    grid-area: description;
+    align-items: flex-end;
+    justify-content: center;
+}
+
+.movie-description {
+    justify-self: center;
+    text-indent: 2%;
+    text-align: center;
+    width: 90%;
+    font-size: clamp(0.75rem, 0.5333rem + 0.9245vw, 1.125rem);
+    margin: 0;
+    max-height: 25%;
+    
+    /* Обрезка описания до 3 строк */
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.movie-button-list {
+    gap: 2%;
+    width: 70%;
+    padding: 0;
+    justify-self: center;
+    list-style: none;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    transform: translateY(-4%);
+    height: 100%;
+    grid-area: buttons;
+}
+
+.movie-button-list-item {
+    width: 20%;
+    height: 70%;
+}
+
+.center-item {
+    width: 40%;
+}
+

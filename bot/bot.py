@@ -4,24 +4,41 @@ import logging
 import hashlib
 from random import choice as rc
 from contextlib import asynccontextmanager
+from urllib.parse import quote
 
 import asyncpg
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
 from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 from dotenv import load_dotenv
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 load_dotenv()
 
+def ease_link_kb(user_link: str):
+    inline_kb_list = [
+        [InlineKeyboardButton(text="Войти в VibeMovie", web_app=WebAppInfo(url=user_link))],
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=inline_kb_list)
 
 def hash_user_id(user_id: int) -> str:
     random_words = os.getenv("RANDOM_WORDS").split(',')
     hashed = hashlib.sha256(str(user_id).encode("utf-8")).hexdigest()
     hashed_final = hashed + str(rc(random_words)) + str(rc(random_words)) + str(rc(random_words))
     return hashed_final
+
+async def get_username(user_id: int):  
+    try:  
+        user = await bot.get_chat(user_id)  
+        return user.username  
+    except Exception as e:  
+        print(f"Ошибка: {e}")  
+        return None  
 
 
 class Database:
@@ -46,10 +63,12 @@ class Database:
                         """
                         CREATE TABLE IF NOT EXISTS favorite (
                             id SERIAL PRIMARY KEY,
+                            telegram_id BIGINT UNIQUE NOT NULL,
                             user_id TEXT UNIQUE NOT NULL,
+                            link TEXT UNIQUE NOT NULL,
                             liked_movies JSONB NOT NULL DEFAULT '[]'::jsonb,
                             disliked_movies JSONB NOT NULL DEFAULT '[]'::jsonb,
-                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                            username TEXT NOT NULL
                         )
                         """
                     )
@@ -80,19 +99,24 @@ class Database:
             logger.error(f"Error checking user existence: {e}")
             return False
 
-    async def add_user(self, telegram_id: int, user_id: str, link: str):
+    async def add_user(self, telegram_id: int, user_id: str, link: str, username: str):
         try:
             async with self.transaction() as conn:
-                await conn.execute(
+                result = await conn.execute(
                     """
-                    INSERT INTO favorite (telegram_id, user_id, link, liked_movies, disliked_movies)
-                    VALUES ($1, $2, $3, '[]'::jsonb, '[]'::jsonb)
+                    INSERT INTO favorite (telegram_id, user_id, link, liked_movies, disliked_movies, username)
+                    VALUES ($1, $2, $3, '[]'::jsonb, '[]'::jsonb, $4)
                     ON CONFLICT (telegram_id) DO NOTHING
                     """,
                     telegram_id,
                     user_id,
                     link,
+                    username,
                 )
+                # дебаг:
+                # - "INSERT 0 1" значит добавили строку
+                # - "INSERT 0 0" значит сработал conflict и ничего не добавилось
+                logger.info("add_user: %s (telegram_id=%s)", result, telegram_id)
         except Exception as e:
             logger.error(f"Error adding user: {e}")
 
@@ -115,19 +139,21 @@ dp = Dispatcher(storage=MemoryStorage())
 @dp.message(Command("start"))
 async def start_handler(message: types.Message):
     try:
-        # Проверяем по telegram_id, так как хэш теперь случайный при каждой генерации
         if await db.user_exists(message.from_user.id):
             user_link = await db.get_user_link(message.from_user.id)
             await message.answer(f"Добро пожаловать обратно!\nВаша ссылка: {user_link}")
             return
 
         hashed_user_id = hash_user_id(message.from_user.id)
-        user_link = f"http://127.0.0.1:5500/site/index.html?user={hashed_user_id}"
+        username = message.from_user.username or message.from_user.full_name
+        safe_username = quote(username or "")
 
-        await db.add_user(message.from_user.id, hashed_user_id, user_link)
+        user_link = f"http://127.0.0.1:5500/site/index.html?user={hashed_user_id}&username={safe_username}"
+        await db.add_user(message.from_user.id, hashed_user_id, user_link, username)
         await message.answer(
-            "Спасибо, что воспользовались нашим ботом\n"
-            f"Ссылка для захода в ваш аккаунт: {user_link}"
+            f"Добро пожаловать, {username}!\n"
+            f"Нажмите кнопку ниже, чтобы войти в свой аккаунт.\n"
+            f"{user_link}"
         )
     except Exception as e:
         logger.error(f"Error in start handler: {e}")

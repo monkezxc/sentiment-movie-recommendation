@@ -4,27 +4,110 @@ import os
 # Добавляем путь к корню проекта для импорта embedding
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..'))
 
-from fastapi import APIRouter, Depends, Query, HTTPException
+from fastapi import APIRouter, Depends, Query, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.db import get_session
+from urllib.parse import urlparse
 
-from app.schemas.schemas import Movie, ReviewCreate, ReviewRequest, ReviewResponse, EmbeddingRequest, EmbeddingResponse, MovieIdsRequest
+from app.schemas.schemas import (
+    Movie,
+    ReviewCreate,
+    ReviewRequest,
+    ReviewResponse,
+    EmbeddingRequest,
+    EmbeddingResponse,
+    MovieIdsRequest,
+    ReviewEmotionRequest,
+    ReviewEmotionResponse,
+)
 from app.crud.crud import (
     get_movies,
     add_review,
     get_reviews,
+    get_emotion_ratings,
+    get_avg_emotion_ratings,
+    get_movies_by_emotion,
     get_movies_by_word,
     get_movies_by_query,
     get_movies_by_ids,
     get_likes,
     get_dislikes,
+    get_all_movies_id
 )
 from embedding.embedding import handle_query, to_embedding
 
 router = APIRouter(prefix="/movies", tags=["Фильмы"])
 
+
+def _proxify_tmdb_image_url(request: Request, url: str | None) -> str | None:
+    """
+    Если url ведёт на image.tmdb.org — переписываем на наш эндпоинт /images/tmdb/...
+    Иначе возвращаем как есть.
+    """
+    if not url:
+        return None
+
+    try:
+        parsed = urlparse(url)
+    except Exception:
+        return url
+
+    if parsed.netloc != "image.tmdb.org":
+        return url
+
+    # Ожидаем путь формата: /t/p/w780/xxxx.jpg
+    parts = (parsed.path or "").strip("/").split("/")
+    if len(parts) < 4:
+        return url
+    if parts[0] != "t" or parts[1] != "p":
+        return url
+
+    size = parts[2]
+    file_path = "/".join(parts[3:])
+    try:
+        return str(request.url_for("tmdb_image", size=size, file_path=file_path))
+    except Exception:
+        # Если url_for не сработал (например, нет request scope), просто вернём оригинал.
+        return url
+
+
+def _movie_to_response_dict(request: Request, movie_obj) -> dict:
+    """
+    Явно формируем ответ для Movie, чтобы было понятно junior-разработчику,
+    и чтобы не мутировать SQLAlchemy-объекты (не помечать их “dirty”).
+    """
+    return {
+        "id": movie_obj.id,
+        "title": movie_obj.title,
+        "release_year": movie_obj.release_year,
+        "duration": movie_obj.duration,
+        "genre": movie_obj.genre,
+        "director": movie_obj.director,
+        "screenwriter": movie_obj.screenwriter,
+        "actors": movie_obj.actors,
+        "description": movie_obj.description,
+        "horizontal_poster_url": _proxify_tmdb_image_url(request, getattr(movie_obj, "horizontal_poster_url", None)),
+        "vertical_poster_url": _proxify_tmdb_image_url(request, getattr(movie_obj, "vertical_poster_url", None)),
+        "country": movie_obj.country,
+        "rating": movie_obj.rating,
+        "tmdb_id": movie_obj.tmdb_id,
+        "embedding": movie_obj.embedding,
+        "reviews": movie_obj.reviews,
+    }
+
+
+@router.get("/all", response_model=list[int])
+async def read_all_movies_id(
+    session: AsyncSession = Depends(get_session),
+):
+    """
+    Получить список ID всех фильмов.
+    """
+    return await get_all_movies_id(session=session)
+
 @router.get("/", response_model=list[Movie])
 async def read_movies(
+    request: Request,
     skip: int = Query(0, ge=0),
     user_id: str = "1",
     limit: int = Query(10, ge=1, le=100),
@@ -36,7 +119,8 @@ async def read_movies(
     - **skip**: Сколько фильмов пропустить (offset)
     - **limit**: Сколько фильмов вернуть
     """
-    return await get_movies(skip=skip, user_id = user_id, limit=limit, session=session)
+    movies = await get_movies(skip=skip, user_id=user_id, limit=limit, session=session)
+    return [_movie_to_response_dict(request, m) for m in movies]
 
 
 @router.post("/{movie_id}/review", response_model=list[ReviewResponse])
@@ -48,7 +132,7 @@ async def add_movie_review(
     """
     Добавить отзыв к фильму.
     """
-    review = await add_review(movie_id, body.user_id, body.text, session,
+    review = await add_review(movie_id, body.text, session, body.username,
                              body.sadness_rating, body.optimism_rating,
                              body.fear_rating, body.anger_rating, body.neutral_rating,
                              body.worry_rating, body.love_rating, body.fun_rating,
@@ -72,6 +156,7 @@ async def read_movie_reviews(
 
 @router.get("/search", response_model=list[Movie])
 async def read_movies(
+    request: Request,
     search: str = '',
     skip: int = Query(0, ge=0),
     user_id: str = "1",
@@ -85,11 +170,13 @@ async def read_movies(
     - **skip**: Сколько фильмов пропустить (offset)
     - **limit**: Сколько фильмов вернуть
     """
-    return await get_movies_by_word(search=search, skip=skip, user_id = user_id, limit=limit, session=session)
+    movies = await get_movies_by_word(search=search, skip=skip, user_id=user_id, limit=limit, session=session)
+    return [_movie_to_response_dict(request, m) for m in movies]
 
 
 @router.get("/semantic-search", response_model=list[Movie])
 async def semantic_search_movies(
+    request: Request,
     query: str,
     skip: int = Query(0, ge=0),
     user_id: str = "1",
@@ -118,7 +205,7 @@ async def semantic_search_movies(
     
     movies = await get_movies_by_ids(paginated_ids, session)
     
-    return movies
+    return [_movie_to_response_dict(request, m) for m in movies]
 
 
 @router.post("/embedding", response_model=EmbeddingResponse)
@@ -137,9 +224,32 @@ async def generate_embedding(request: EmbeddingRequest):
     return EmbeddingResponse(embedding=embedding)
 
 
+@router.post("/review-emotion", response_model=ReviewEmotionResponse)
+async def get_review_emotion(request: ReviewEmotionRequest):
+    """
+    Определить эмоцию по тексту отзыва и уверенность модели.
+    Логика извлечения эмоции уже реализована в `KinoServer/model/roBERT_class.py`.
+    """
+    text = (request.text or "").strip()
+    if not text:
+        raise HTTPException(status_code=400, detail="Текст отзыва пустой")
+
+    # Импортируем внутри эндпоинта, чтобы модель грузилась только при первом вызове,
+    # а не на старте всего сервера.
+    from anyio import to_thread
+    from model.roBERT_class import classifier_instance
+
+    result = await to_thread.run_sync(classifier_instance.classify, text, True)
+    return ReviewEmotionResponse(
+        emotion=result['top_emotion'],
+        confidence=result['top_confidence']
+    )
+
+
 @router.post("/by-ids", response_model=list[Movie])
 async def get_movies_by_ids_endpoint(
-    request: MovieIdsRequest,
+    request: Request,
+    body: MovieIdsRequest,
     session: AsyncSession = Depends(get_session),
 ):
     """
@@ -147,6 +257,56 @@ async def get_movies_by_ids_endpoint(
 
     - **movie_ids**: Список ID фильмов
     """
-    movies = await get_movies_by_ids(request.movie_ids, session)
-    return movies
+    movies = await get_movies_by_ids(body.movie_ids, session)
+    return [_movie_to_response_dict(request, m) for m in movies]
+
+
+@router.get("/{tmdb_id}/emotion-ratings", response_model=dict[str, list[int]])
+async def get_movie_emotion_ratings(
+    tmdb_id: int,
+    session: AsyncSession = Depends(get_session),
+):
+    """
+    Получить рейтинги эмоций для фильма по TMDB ID.
+
+    - **tmdb_id**: ID фильма в TMDB
+    Возвращает: {'emotion1': [rating1, rating2, ...], 'emotion2': [...], ...}
+    """
+    ratings = await get_emotion_ratings(tmdb_id, session)
+    return ratings
+
+
+@router.get("/{tmdb_id}/avg-emotion-ratings", response_model=dict[str, float] | None)
+async def get_movie_avg_emotion_ratings(
+    tmdb_id: int,
+    session: AsyncSession = Depends(get_session),
+):
+    """
+    Получить средние рейтинги эмоций для фильма по TMDB ID из таблицы ratings.
+
+    - **tmdb_id**: ID фильма в TMDB
+    Возвращает: {'sadness': 3.5, 'optimism': 7.2, ...} или None если фильм не найден
+    """
+    ratings = await get_avg_emotion_ratings(tmdb_id, session)
+    return ratings
+
+
+@router.get("/by-emotion/{emotion}", response_model=list[Movie])
+async def get_movies_by_emotion_endpoint(
+    request: Request,
+    emotion: str,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(20, ge=1, le=100),
+    session: AsyncSession = Depends(get_session),
+):
+    """
+    Получить фильмы, отсортированные по рейтингу указанной эмоции (от большего к меньшему).
+
+    - **emotion**: Название эмоции (sadness, optimism, fear, anger, neutral, worry, love, fun, boredom)
+    - **skip**: Сколько фильмов пропустить (offset)
+    - **limit**: Сколько фильмов вернуть
+    Возвращает только фильмы с рейтингом выбранной эмоции > 0
+    """
+    movies = await get_movies_by_emotion(emotion, skip, limit, session)
+    return [_movie_to_response_dict(request, m) for m in movies]
 

@@ -1,0 +1,24 @@
+/* Оверлеи, которые показываются в открытой карточке. */
+
+.overlay {
+    position: absolute;
+    width: 8%;
+    height: 120%;
+    background: linear-gradient(90deg, rgba(var(--theme-color-rgb), 1), rgba(var(--theme-color-rgb), 0.4), rgba(var(--theme-color-rgb), 0));
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+}
+
+.overlay_left {
+    right: 0;
+    background: linear-gradient(-90deg, rgba(var(--theme-color-rgb), 1), rgba(var(--theme-color-rgb), 0.4), rgba(var(--theme-color-rgb), 0));
+}
+
+.overlay_left, .overlay_right {
+    display: none;
+}
+
+.is-open .overlay_left, .is-open .overlay_right {
+    display: block;
+}
+

@@ -11,7 +11,7 @@ class KinopoiskClient:
     def __init__(self):
         self.api_key = os.getenv('KINOPOISK_API_KEY', 'KINOPOISK_API_KEY')
         self.base_url = "https://kinopoiskapiunofficial.tech/api"
-        self.reviews_to_parse = int(os.getenv('REVIEWS_TO_PARSE', 5))
+        self.reviews_to_parse = int(os.getenv('REVIEWS_TO_PARSE', 50))
         self.translator = GoogleTranslator(source='auto', target='ru')
 
     def get_reviews(self, kinopoisk_id: int) -> List[str]:

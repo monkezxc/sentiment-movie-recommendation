@@ -1,0 +1,22 @@
+# --- Env files ---
+.env
+
+# --- Python-generated files ---
+__pycache__/
+*.py[oc]
+
+# --- Python build artifacts ---
+build/
+dist/
+wheels/
+*.egg-info
+
+# --- Virtual environments / tooling ---
+.venv
+.python-version
+
+# --- Project-specific ---
+site/movies.csv
+site/movies.json
+
+dataset/
