@@ -17,7 +17,7 @@ from app.config.config_reader import config
 
 router = APIRouter(prefix="/images", tags=["Images"])
 
-# Набор популярных размеров TMDB. При необходимости можно добавить.
+# Разрешённые размеры TMDB.
 ALLOWED_SIZES: Final[set[str]] = {
     "w92",
     "w154",
@@ -32,10 +32,7 @@ _LOCKS: dict[str, asyncio.Lock] = {}
 
 
 def _get_lock(key: str) -> asyncio.Lock:
-    """
-    Лок на один “ключ картинки”, чтобы не качать один и тот же файл параллельно
-    (работает в рамках одного процесса).
-    """
+    """Лок на ключ картинки (чтобы не качать один файл параллельно)."""
     lock = _LOCKS.get(key)
     if lock is None:
         lock = asyncio.Lock()
@@ -57,10 +54,7 @@ def _media_type_from_suffix(suffix: str) -> str:
 
 
 def _safe_cache_path(size: str, file_path: str, cache_root: Path) -> Path:
-    """
-    Преобразуем (size + file_path) в безопасное имя файла в кэше.
-    Так мы не зависим от “странных” символов и длины пути.
-    """
+    """Безопасное имя файла в кэше (sha256 от size+file_path)."""
     ext = Path(file_path).suffix or ".jpg"
     key = f"{size}/{file_path}".encode("utf-8", errors="ignore")
     digest = hashlib.sha256(key).hexdigest()
@@ -68,12 +62,7 @@ def _safe_cache_path(size: str, file_path: str, cache_root: Path) -> Path:
 
 
 def _cleanup_cache_if_needed(cache_root: Path) -> None:
-    """
-    Чистим кэш, чтобы не занимать слишком много места.
-    Стратегия:
-    - удаляем файлы старше TTL (если TTL > 0)
-    - если всё ещё больше лимита, удаляем самые “старые” по mtime (простая LRU)
-    """
+    """Чистим кэш по TTL и лимиту размера (простая LRU по mtime)."""
     cache_root.mkdir(parents=True, exist_ok=True)
 
     max_bytes = int(config.TMDB_IMAGE_CACHE_MAX_BYTES)
@@ -95,7 +84,6 @@ def _cleanup_cache_if_needed(cache_root: Path) -> None:
         size_bytes = int(st.st_size)
         mtime = float(st.st_mtime)
 
-        # TTL очистка
         if max_age_seconds and (now - mtime) > max_age_seconds:
             try:
                 p.unlink(missing_ok=True)
@@ -109,7 +97,6 @@ def _cleanup_cache_if_needed(cache_root: Path) -> None:
     if total <= max_bytes:
         return
 
-    # Удаляем самые старые по mtime, пока не уложимся в лимит
     files.sort(key=lambda x: x[2])  # старые -> новые
     for p, size_bytes, _mtime in files:
         if total <= max_bytes:

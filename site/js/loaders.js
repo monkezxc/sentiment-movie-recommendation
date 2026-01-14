@@ -1,10 +1,29 @@
-/**
- * Загрузчики фильмов (меняют state и возвращают boolean как в старом коде).
- */
+// Загрузчики фильмов: меняют `state` и возвращают boolean.
 
-export async function loadMovies(state, api, { userId, limit = 10 }) {
+let globalLoader = null;
+let globalLoaderCounter = 0;
+
+// Подключаем внешний лоадер (например, оверлей). Он не должен блокировать клики.
+export function setGlobalLoader(loader) {
+  globalLoader = loader || null;
+}
+
+export function showGlobalLoader() {
+  if (!globalLoader) return;
+  globalLoaderCounter += 1;
+  if (globalLoaderCounter === 1) globalLoader.show();
+}
+
+export function hideGlobalLoader() {
+  if (!globalLoader) return;
+  globalLoaderCounter = Math.max(0, globalLoaderCounter - 1);
+  if (globalLoaderCounter === 0) globalLoader.hide();
+}
+
+export async function loadMovies(state, api, { userId, limit = 10, showLoader = true }) {
   if (state.isLoading) return false;
   state.isLoading = true;
+  if (showLoader) showGlobalLoader();
 
   try {
     const newMovies = await api.fetchMovies({
@@ -14,7 +33,7 @@ export async function loadMovies(state, api, { userId, limit = 10 }) {
       searchQuery: state.searchQuery,
     });
 
-    // Если фильмов меньше лимита (конец списка) и финальная карта еще не добавлена.
+    // Если это конец списка — добавляем финальную карточку один раз.
     if (newMovies.length < limit && !state.endCardAdded) {
       newMovies.push(makeEndCard());
       state.endCardAdded = true;
@@ -31,14 +50,16 @@ export async function loadMovies(state, api, { userId, limit = 10 }) {
     console.error('Не удалось загрузить фильмы:', e);
   } finally {
     state.isLoading = false;
+    if (showLoader) hideGlobalLoader();
   }
 
   return false;
 }
 
-export async function loadMoviesByEmotion(state, api, { emotion, limit = 10 }) {
+export async function loadMoviesByEmotion(state, api, { emotion, limit = 10, showLoader = true }) {
   if (state.isLoading) return false;
   state.isLoading = true;
+  if (showLoader) showGlobalLoader();
 
   try {
     const newMovies = await api.fetchMoviesByEmotion({
@@ -63,14 +84,16 @@ export async function loadMoviesByEmotion(state, api, { emotion, limit = 10 }) {
     console.error('Не удалось загрузить фильмы по эмоции:', e);
   } finally {
     state.isLoading = false;
+    if (showLoader) hideGlobalLoader();
   }
 
   return false;
 }
 
-export async function loadMoviesSemantic(state, api, { query, userId, limit = 10 }) {
+export async function loadMoviesSemantic(state, api, { query, userId, limit = 10, showLoader = true }) {
   if (state.isLoading) return false;
   state.isLoading = true;
+  if (showLoader) showGlobalLoader();
 
   try {
     const newMovies = await api.fetchMoviesSemantic({
@@ -97,6 +120,7 @@ export async function loadMoviesSemantic(state, api, { query, userId, limit = 10
     console.error('Не удалось загрузить фильмы (семантический поиск):', e);
   } finally {
     state.isLoading = false;
+    if (showLoader) hideGlobalLoader();
   }
 
   return false;

@@ -4,8 +4,36 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.db.db import Base
 
 
+class CoerceMutableList(MutableList):
+    """
+    MutableList с более мягким приведением типов (чтобы не падать на “кривом” JSON).
+    """
+
+    @classmethod
+    def coerce(cls, key, value):
+        if value is None:
+            return cls()
+
+        if isinstance(value, (list, cls)):
+            return super().coerce(key, value)
+
+        if isinstance(value, (tuple, set)):
+            return super().coerce(key, list(value))
+
+        if isinstance(value, dict):
+            for nested_key in ("reviews", "embedding", "items", "data", "value"):
+                nested = value.get(nested_key)
+                if isinstance(nested, list):
+                    return super().coerce(key, nested)
+
+            values = list(value.values())
+            return super().coerce(key, values)
+
+        return super().coerce(key, value)
+
+
 class Favorite(Base):
-    # Единая таблица с ботом: bot создаёт/заполняет пользователя, KinoServer только обновляет лайки/дизлайки.
+    # Таблица общая с ботом: KinoServer обновляет лайки/дизлайки.
     __tablename__ = "favorite"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
@@ -15,11 +43,11 @@ class Favorite(Base):
     link: Mapped[str] = mapped_column(String, unique=True, nullable=False)
 
     liked_movies: Mapped[list[int]] = mapped_column(
-        MutableList.as_mutable(JSON), nullable=False, default=list
+        CoerceMutableList.as_mutable(JSON), nullable=False, default=list
     )
 
     disliked_movies: Mapped[list[int]] = mapped_column(
-        MutableList.as_mutable(JSON), nullable=False, default=list
+        CoerceMutableList.as_mutable(JSON), nullable=False, default=list
     )
     username: Mapped[str] = mapped_column(String, nullable=False)
 
@@ -45,10 +73,10 @@ class Movie(Base):
     rating: Mapped[float] = mapped_column(Float, nullable=True)
     tmdb_id: Mapped[int] = mapped_column(Integer, unique=True, nullable=True)
     embedding: Mapped[list[float]] = mapped_column(
-        MutableList.as_mutable(JSON), nullable=True, default=list
+        CoerceMutableList.as_mutable(JSON), nullable=True, default=list
     )
     reviews: Mapped[list[str]] = mapped_column(
-        MutableList.as_mutable(JSON), nullable=True, default=list
+        CoerceMutableList.as_mutable(JSON), nullable=True, default=list
     )
 
     def __repr__(self):
@@ -60,8 +88,7 @@ class Review(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     movie_id: Mapped[int] = mapped_column(Integer, nullable=False)
     text: Mapped[str] = mapped_column(String, nullable=False)
-    # user_id для отзывов больше не используем (отображаем username).
-    # Оставляем колонку опциональной для совместимости со старой БД.
+    # user_id в отзывах оставлен для совместимости, но обычно не используется.
     user_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     username: Mapped[str | None] = mapped_column(String, nullable=True)
     sadness_rating: Mapped[int] = mapped_column(Integer, nullable=True)

@@ -5,16 +5,30 @@ import { initUserContext, ensureUserExistsOrShowStub } from './js/user_gate.js';
 import { createFavoritesController } from './js/favorites.js';
 import { createCardsController } from './js/cards.js';
 import * as loaders from './js/loaders.js';
+import { initViewportHeightFix } from './js/viewport_fix.js';
+
+// Фиксируем высоту viewport для мобильных браузеров.
+initViewportHeightFix();
 
 document.addEventListener('DOMContentLoaded', async () => {
+  const loaderEl = document.getElementById('app-loader');
+  loaders.setGlobalLoader({
+    show: () => loaderEl?.classList.add('is-visible'),
+    hide: () => loaderEl?.classList.remove('is-visible'),
+  });
+
+  // Лоадер виден сразу после старта.
+  loaders.showGlobalLoader();
+
   const { userId, username } = initUserContext();
   const effectiveUserId = userId || DEFAULT_USER_ID;
 
-  console.log(userId, username);
-
-  // Если пользователя нет в БД (или запрос упал) — показываем заглушку и выходим.
+  // Если пользователя нет в БД — показываем заглушку и выходим.
   const ok = await ensureUserExistsOrShowStub({ apiUrl: API_URL, userId });
-  if (!ok) return;
+  if (!ok) {
+    loaders.hideGlobalLoader();
+    return;
+  }
 
   const state = createState();
   const api = createApi({ apiUrl: API_URL });
@@ -49,6 +63,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     onOpenMovie: (movie) => cardsController.openMovieFromFavorites(movie),
   });
 
+  favoritesController.setupClearButtons();
+
   cardsController.attachGlobalDragListeners();
 
   async function init() {
@@ -62,7 +78,35 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!query) return;
 
     state.searchQuery = '';
-    state.semanticQuery = query;
+    // Пытаемся обогатить текст запроса определённой эмоцией.
+    let enrichedQuery = query;
+    try {
+      const result = await api.detectEmotionFromText({ text: query });
+      const emotion = (result?.emotion || '').toString().trim();
+
+      // Перевод ярлыка модели в человекочитаемую форму.
+      const emotionRu = {
+        sadness: 'грусть',
+        optimism: 'оптимизм',
+        fear: 'страх',
+        anger: 'гнев',
+        neutral: 'нейтральность',
+        worry: 'беспокойство',
+        love: 'любовь',
+        fun: 'веселье',
+        boredom: 'скука',
+      };
+
+      if (emotion) {
+        const humanEmotion = emotionRu[emotion] || emotion;
+        enrichedQuery = `${query}\nЭмоция запроса: ${humanEmotion}`;
+      }
+    } catch (e) {
+      // Если эмоция не определилась — ищем по исходному тексту.
+      console.warn('Не удалось определить эмоцию для запроса:', e);
+    }
+
+    state.semanticQuery = enrichedQuery;
     state.offset = 0;
     state.movies = [];
     state.currentIndex = 0;
@@ -71,7 +115,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     wrapper.innerHTML = '';
 
     await loaders.loadMoviesSemantic(state, api, {
-      query,
+      query: enrichedQuery,
       userId: effectiveUserId,
       limit: 20,
     });
@@ -82,7 +126,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const selectedEmotion = emotionsFilter.value;
 
     if (!selectedEmotion || selectedEmotion === 'all') {
-      // Если эмоция не выбрана или выбрано "Все эмоции", показываем обычные фильмы.
+      // Без фильтра: показываем обычные фильмы.
       state.emotionFilter = null;
       state.offset = 0;
       state.movies = [];
@@ -125,14 +169,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (textSearchInput) {
     textSearchInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault(); // Предотвращаем перенос строки.
+        e.preventDefault(); // Enter запускает поиск, Shift+Enter — перенос строки.
         handleSemanticSearch();
         textSearchInput.blur();
       }
     });
   }
 
-  // Обработчик для фильтра эмоций.
   if (emotionsFilter) {
     emotionsFilter.addEventListener('change', handleEmotionFilter);
   }
@@ -150,5 +193,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  await init();
+  try {
+    await init();
+  } finally {
+    // Первичная загрузка завершилась.
+    loaders.hideGlobalLoader();
+  }
 });

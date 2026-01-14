@@ -1,4 +1,6 @@
-/* Дополнительная информация (видна, когда карточка раскрыта). */
+@charset "UTF-8";
+
+/* Доп. информация (видна в раскрытой карточке). */
 
 .additional_info {
     box-sizing: border-box;
@@ -17,7 +19,7 @@
 }
 
 .additional_info__top {
-    /* Градиент заканчивается ДО секции отзывов */
+    /* Градиент заканчивается перед секцией отзывов */
     background: linear-gradient(
         180deg,
         rgba(var(--theme-color-rgb), 0) 0%,
@@ -27,7 +29,7 @@
     padding: 0 45px clamp(20px, 4vw, 30px) 45px;
 }
 
-/* Топ-3 эмоции в открытой карточке */
+/* Топ-3 эмоции */
 .additional_info__emotions {
     margin-top: 10px;
     display: flex;

@@ -18,5 +18,8 @@ wheels/
 # --- Project-specific ---
 site/movies.csv
 site/movies.json
+site/env.js
 
 dataset/
+
+docker-compose.yml

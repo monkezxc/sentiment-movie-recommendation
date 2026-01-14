@@ -18,7 +18,7 @@ export function getTopEmotions(emotionRatings, topN = 3) {
     .sort(([, a], [, b]) => b - a)
     .slice(0, topN);
 
-  // Всегда возвращаем массив длины topN (чтобы UI был стабильным).
+  // Всегда возвращаем массив длины topN, чтобы UI был стабильным.
   const result = [];
   for (let i = 0; i < topN; i++) {
     const [key, rating] = entries[i] || [null, null];
@@ -33,12 +33,10 @@ export function getTopEmotions(emotionRatings, topN = 3) {
 }
 
 export function displayEmotionRatings(card, emotionRatings) {
-  // Сортируем эмоции по рейтингу (от большего к меньшему).
   const sortedEmotions = Object.entries(emotionRatings || {})
     .sort(([, a], [, b]) => b - a)
-    .slice(0, 3); // Берем топ-3
+    .slice(0, 3);
 
-  // Маппинг названий эмоций на эмодзи (оставляем как было раньше).
   const emotionEmojis = {
     sadness: '😢',
     optimism: '😊',
@@ -51,7 +49,6 @@ export function displayEmotionRatings(card, emotionRatings) {
     boredom: '😴',
   };
 
-  // Обновляем элементы для топ-3 эмоций.
   for (let i = 0; i < 3; i++) {
     const [emotionName, rating] = sortedEmotions[i] || [null, 0];
     if (emotionName && rating > 0) {
@@ -69,7 +66,6 @@ export function displayEmotionRatings(card, emotionRatings) {
 }
 
 export function displayTopEmotionsText(containerOwner, emotionRatings) {
-  // containerOwner может быть и карточкой, и элементом меню лайкнутых.
   const container =
     containerOwner.querySelector?.('.additional_info__emotions') ||
     containerOwner.querySelector?.('.favorites-movie__emotions');

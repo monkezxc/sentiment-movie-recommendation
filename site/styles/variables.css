@@ -4,8 +4,8 @@
     
     --font-main: "Unbounded", sans-serif;
     
-    --bg-body-image: url(/site/images/body_background.jpg);
-    --bg-card-image: url(/site/images/card_bg.jpg);
+    --bg-body-image: url(../images/body_background.jpg);
+    --bg-card-image: url(../images/card_bg.jpg);
     
     --z-header: 2;
     --z-card: 5;

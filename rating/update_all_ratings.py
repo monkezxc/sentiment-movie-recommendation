@@ -1,8 +1,13 @@
 import requests
 from calculate_avg_ratings import update_avg_ratings
 
-def get_all_movies_id(api_url: str = "http://127.0.0.1:5001") -> str:
+def get_all_movies_id(api_url: str = "") -> str:
     try:
+        if not api_url:
+            import os
+            api_url = (os.getenv("API_URL") or "").strip()
+            if not api_url:
+                raise RuntimeError("Не задан API_URL. Укажите базовый URL бэкенда, например 'https://<HOST>/api'.")
         response = requests.get(
             f"{api_url}/movies/all",
             timeout=60  # Таймаут 60 секунд на случай долгой обработки

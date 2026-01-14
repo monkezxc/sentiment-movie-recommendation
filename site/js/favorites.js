@@ -1,9 +1,6 @@
 import { displayTopEmotionsText } from './ui_emotions.js';
 
-/**
- * Контроллер "понравившихся фильмов" (меню справа).
- * Отвечает только за загрузку/рендер списка и обработку клика по элементу.
- */
+// Контроллер "понравившихся фильмов": загрузка/рендер списка и клик по элементу.
 export function createFavoritesController({ api, userId, onOpenMovie }) {
   async function loadAndDisplayLikedMovies() {
     const likedIds = await api.getLikedMovies({ userId });
@@ -41,14 +38,11 @@ export function createFavoritesController({ api, userId, onOpenMovie }) {
 
       favoritesList.appendChild(listItem);
 
-      // Подгружаем и отображаем топ-3 эмоции.
       if (movie.tmdb_id) {
         loadEmotionRatingsForFavoritesItem(listItem, movie.tmdb_id);
       }
 
-      // Открытие карточки фильма по клику в меню лайкнутых.
       listItem.addEventListener('click', () => {
-        // Закрываем меню.
         const toggle = document.getElementById('favorites-menu-toggle');
         if (toggle) toggle.checked = false;
 
@@ -67,8 +61,38 @@ export function createFavoritesController({ api, userId, onOpenMovie }) {
     }
   }
 
+  function setupClearButtons() {
+    const clearLikesBtn = document.querySelector('.favorites-clear-likes-btn');
+    const clearDislikesBtn = document.querySelector('.favorites-clear-dislikes-btn');
+
+    if (clearLikesBtn) {
+      clearLikesBtn.addEventListener('click', async () => {
+        try {
+          await api.clearLikes({ userId });
+          await loadAndDisplayLikedMovies();
+        } catch (e) {
+          console.error('Ошибка при сбросе лайков:', e);
+          alert('Не удалось сбросить лайки. Попробуйте еще раз.');
+        }
+      });
+    }
+
+    if (clearDislikesBtn) {
+      clearDislikesBtn.addEventListener('click', async () => {
+        try {
+          await api.clearDislikes({ userId });
+          await loadAndDisplayLikedMovies();
+        } catch (e) {
+          console.error('Ошибка при сбросе дизлайков:', e);
+          alert('Не удалось сбросить дизлайки. Попробуйте еще раз.');
+        }
+      });
+    }
+  }
+
   return {
     loadAndDisplayLikedMovies,
+    setupClearButtons,
   };
 }
 

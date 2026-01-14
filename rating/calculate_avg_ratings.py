@@ -2,8 +2,13 @@ import requests
 from emotions_rating_db import EmotionRatingsDB
 
 
-def get_emotion_ratings(tmdb_id: str, api_url: str = "http://127.0.0.1:5001") -> str:
+def get_emotion_ratings(tmdb_id: str, api_url: str = "") -> str:
     try:
+        if not api_url:
+            import os
+            api_url = (os.getenv("API_URL") or "").strip()
+            if not api_url:
+                raise RuntimeError("Не задан API_URL. Укажите базовый URL бэкенда, например 'https://<HOST>/api'.")
         response = requests.get(
             f"{api_url}/movies/{tmdb_id}/emotion-ratings",
             timeout=60  # Таймаут 60 секунд на случай долгой обработки

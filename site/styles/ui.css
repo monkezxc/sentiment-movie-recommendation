@@ -91,9 +91,9 @@
     z-index: var(--z-close-btn);
     top: 15px;
     right: 15px;
-    width: clamp(20px, 3vw, 60px);
+    width: clamp(30px, 3vw, 60px);
     aspect-ratio: 1/1;
-    background-image: url(/site/images/cross.png);
+    background-image: url(../images/cross.png);
     background-size: 80%;
     background-position: center;
     background-repeat: no-repeat;

@@ -1,22 +1,11 @@
-'''
-Загрузка модели roberta-base-go_emotions
-'''
+"""Классификатор эмоций (roberta-base-go_emotions + перевод RU->EN)."""
 
 from transformers import pipeline
 
-classifier = pipeline(task="text-classification", model="SamLowe/roberta-base-go_emotions", top_k=None)
-
-
-from transformers import pipeline
-
-# Глобальная переменная для модели
 _emotion_classifier = None
 
 def get_classifier():
-    """
-    Загружает модель
-    Возвращает готовую модель для классификации
-    """
+    """Ленивая загрузка модели."""
     global _emotion_classifier
     
     if _emotion_classifier is None:
@@ -32,24 +21,18 @@ def get_classifier():
 
 
 
-"""
-Классификатор эмоций с переводом через deeptranslate
-"""
+"""Классификатор эмоций с переводом через deep_translator."""
 
 from typing import Dict, List
 from deep_translator import GoogleTranslator
 
 class EmotionClassifier:
-    """
-    Классификатор эмоций с автоматическим переводом.
-    Использует deeptranslate для качественного перевода.
-    """
+    """Классификатор эмоций с переводом (RU->EN)."""
     
     def __init__(self):
-        """Инициализация с загрузкой модели"""
+        """Инициализация."""
         self.classifier = get_classifier()
         
-        # Инициализируем переводчик
         self.translator_ru_en = GoogleTranslator(source='ru', target='en')
         
         self.target_emotions = [
@@ -62,8 +45,6 @@ class EmotionClassifier:
             'love',
             'fun',
             'boredom']
-        
-        # Маппинг оригинальных эмоций в целевые
         
         self.emotion_mapping = {
             'sadness': ['sadness'],
@@ -78,15 +59,7 @@ class EmotionClassifier:
 
     
     def is_russian(self, text: str) -> bool:
-        """
-        Простая проверка: русский ли текст
-        
-        Args:
-            text: Текст для проверки
-            
-        Returns:
-            True если есть русские буквы
-        """
+        """Проверяет, есть ли в тексте русские буквы."""
         if not text or not isinstance(text, str):
             return False
         
@@ -97,38 +70,19 @@ class EmotionClassifier:
         return False
     
     def translate_ru_to_en(self, text: str) -> str:
-        """
-        Переводит русский текст на английский с помощью deeptranslate.
-        
-        Args:
-            text: Русский текст
-            
-        Returns:
-            str: Английский перевод
-        """
+        """Перевод RU->EN. Если перевод не удался — возвращаем исходный текст."""
         try:
             if not self.is_russian(text):
                 return text
             
-            # Используем GoogleTranslator из deep_translator
             translated = self.translator_ru_en.translate(text)
             return translated
         except Exception as e:
             print(f"Ошибка перевода: {e}")
-            # Fallback: возвращаем оригинальный текст
             return text
     
     def prepare_text(self, text: str, translate: bool = True) -> tuple:
-        """
-        Подготавливает текст для модели.
-        
-        Args:
-            text: Исходный текст
-            translate: Нужно ли переводить
-            
-        Returns:
-            tuple: (обработанный_текст, информация_о_переводе)
-        """
+        """Готовит текст для модели и возвращает (text, meta)."""
         is_russian = self.is_russian(text)
         
         if is_russian:
@@ -148,39 +102,18 @@ class EmotionClassifier:
             }
     
     def query_model(self, text: str) -> List[Dict]:
-        """
-        Отправляет запрос к модели эмоций.
-        
-        Args:
-            text: Текст на английском
-            
-        Returns:
-            List[Dict]: Сырые предсказания модели
-        """
-        # Важно: у RoBERTa ограничение ~512 токенов. Длинные тексты могут падать с indexing error.
-        # Поэтому включаем обрезку (truncation) — остальная логика (маппинг/топ-эмоция) не меняется.
+        """Запрос к модели (с обрезкой длинных текстов)."""
         return self.classifier([text], truncation=True, max_length=512)[0]
     
     def map_emotions(self, raw_predictions: List[Dict]) -> Dict[str, float]:
-        """
-        Маппинг 28 -> 9
-        
-        Args:
-            raw_predictions: Сырые предсказания модели
-            
-        Returns:
-            Dict: Целевые эмоции с вероятностями
-        """
-        # Инициализируем скоры для всех целевых эмоций
+        """Маппинг 28 эмоций модели -> 9 целевых."""
         emotion_scores = {emotion: 0.0 for emotion in self.target_emotions}
         
-        # Агрегируем скоры по правилам маппинга
         for target_emotion, source_emotions in self.emotion_mapping.items():
             for pred in raw_predictions:
                 if pred['label'] in source_emotions:
                     emotion_scores[target_emotion] += pred['score']
         
-        # Нормализуем
         total = sum(emotion_scores.values())
         if total > 0:
             emotion_scores = {k: v/total for k, v in emotion_scores.items()}
@@ -188,26 +121,13 @@ class EmotionClassifier:
         return emotion_scores
     
     def classify(self, text: str, translate: bool = True) -> Dict:
-        """
-        Основная функция классификации эмоций
-        
-        Args:
-            text: Текст для анализа
-            translate: Переводить ли русский текст
-            
-        Returns:
-            Dict: Результат классификации
-        """
-        # Подготовка текста
+        """Классификация эмоций: топ-эмоция + распределение."""
         processed_text, translation_info = self.prepare_text(text, translate)
         
-        # Отправляем запрос
         raw_predictions = self.query_model(processed_text)
         
-        # Мап эмоций
         mapped_emotions = self.map_emotions(raw_predictions)
         
-        # Находим топ эмоции
         sorted_emotions = sorted(
             mapped_emotions.items(),
             key=lambda x: x[1],
@@ -216,7 +136,6 @@ class EmotionClassifier:
         
         top_emotion, top_confidence = sorted_emotions[0]
         
-        # 5. Формируем результат
         result = {
             'original_text': translation_info['original'],
             'top_emotion': top_emotion,
@@ -227,27 +146,17 @@ class EmotionClassifier:
         return result
     
     def classify_simple(self, text: str) -> str:
-        """
-        Упрощенная версия: возвращает только название эмоции.
-        
-        Args:
-            text: Текст для анализа
-            
-        Returns:
-            str: Название эмоции
-        """
+        """Упрощённо: возвращает только название эмоции."""
         result = self.classify(text, translate=True)
         return result['top_emotion']
     
 
 
-# Функция для быстрого создания классификатора
 def create_classifier() -> EmotionClassifier:
     """Создает и возвращает классификатор эмоций."""
     return EmotionClassifier()
 
 
-# Глобальный экземпляр для повторного использования
 _global_classifier = None
 
 def get_global_classifier() -> EmotionClassifier:

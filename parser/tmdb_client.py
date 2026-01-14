@@ -1,6 +1,4 @@
-"""
-Модуль для работы с TMDB API
-"""
+"""TMDB API клиент."""
 import os
 import requests
 from typing import Dict, List, Optional
@@ -38,7 +36,6 @@ class TMDBClient:
     def get_movie_details(self, movie_id: int) -> Optional[Dict]:
         """Получение детальной информации о фильме"""
         try:
-            # Получаем основную информацию о фильме
             url = f"{self.base_url}/movie/{movie_id}"
             headers = {
                 "Authorization": f"Bearer {self.access_token}",
@@ -52,17 +49,14 @@ class TMDBClient:
             response.raise_for_status()
             movie_data = response.json()
 
-            # Получаем информацию о создателях
             credits_url = f"{self.base_url}/movie/{movie_id}/credits"
             credits_response = requests.get(credits_url, headers=headers, params=params, timeout=10)
             credits_data = credits_response.json() if credits_response.status_code == 200 else {}
 
-            # Получаем переводы для проверки языка
             translations_url = f"{self.base_url}/movie/{movie_id}/translations"
             translations_response = requests.get(translations_url, headers={"Authorization": f"Bearer {self.access_token}"}, timeout=10)
             translations_data = translations_response.json() if translations_response.status_code == 200 else {}
 
-            # Объединяем данные
             movie_data['credits'] = credits_data
             movie_data['translations'] = translations_data
 
@@ -73,7 +67,6 @@ class TMDBClient:
     def is_russian_title(self, title: str) -> bool:
         """Проверка, содержит ли название русские символы"""
         try:
-            # Проверяем наличие хотя бы одной русской буквы
             return any('\u0400' <= char <= '\u04FF' for char in title)
         except:
             return False

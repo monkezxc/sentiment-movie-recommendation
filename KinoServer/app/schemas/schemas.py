@@ -22,7 +22,6 @@ class ReviewCreate(BaseModel):
 
 class ReviewRequest(BaseModel):
     text: str
-    # username нужен для отображения автора отзыва
     username: str | None = None
     sadness_rating: int = 0
     optimism_rating: int = 0

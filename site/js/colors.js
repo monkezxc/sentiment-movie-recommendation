@@ -1,16 +1,10 @@
-/**
- * Работа с цветами/темизацией карточек.
- * Использует глобальную библиотеку `rgbaster.umd.js`, которая кладёт анализатор в `window`.
- */
+// Темизация карточек по доминантному цвету (анализатор из `rgbaster.umd.js` в `window`).
 
-// Проверка, является ли цвет слишком светлым.
 function isColorTooLight(r, g, b, threshold = 200) {
-  // Яркость по формуле воспринимаемой яркости.
   const brightness = 0.299 * r + 0.587 * g + 0.114 * b;
   return brightness > threshold;
 }
 
-// Извлечение доминантного цвета из изображения.
 export async function extractColors(imagePath, cardElement) {
   const analyze = window.rgbaster || window.RGBaster;
   if (!analyze) return;
@@ -23,7 +17,6 @@ export async function extractColors(imagePath, cardElement) {
         const rgbString = match[0];
         const [r, g, b] = rgbString.split(',').map((val) => parseInt(val.trim(), 10));
 
-        // Если цвет слишком светлый, заменяем на черный.
         if (isColorTooLight(r, g, b)) {
           cardElement.style.setProperty('--theme-color-rgb', '0, 0, 0');
         } else {
@@ -32,7 +25,7 @@ export async function extractColors(imagePath, cardElement) {
       }
     }
   } catch (e) {
-    // Молча игнорируем — как и раньше (в старом коде catch был пустой).
+    // Игнорируем ошибку анализа цвета.
   }
 }
 

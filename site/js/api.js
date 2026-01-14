@@ -1,7 +1,4 @@
-/**
- * API-слой: только fetch и разбор ответов.
- * Никакой работы с DOM/стейтом внутри — так проще тестировать и понимать.
- */
+// API-слой: только fetch и разбор JSON (без работы с DOM/стейтом).
 
 async function fetchJson(url, options) {
   const resp = await fetch(url, options);
@@ -33,6 +30,16 @@ export function createApi({ apiUrl }) {
       return await fetchJson(url);
     },
 
+    /** @returns {Promise<{emotion: string, confidence: number}>} */
+    async detectEmotionFromText({ text }) {
+      const payload = { text: (text || '').toString() };
+      return await fetchJson(`${apiUrl}/movies/review-emotion`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+    },
+
     async postLike({ userId, movieId }) {
       return await fetchJson(`${apiUrl}/favorite/like/${encodeURIComponent(userId)}`, {
         method: 'POST',
@@ -50,7 +57,6 @@ export function createApi({ apiUrl }) {
     },
 
     async getLikedMovies({ userId }) {
-      // Возвращает список id фильмов (как было в старом `getLikedMovies()`).
       try {
         const url = `${apiUrl}/favorite/likes/${encodeURIComponent(userId)}`;
         return await fetchJson(url);
@@ -58,6 +64,18 @@ export function createApi({ apiUrl }) {
         console.error('Ошибка при получении лайкнутых фильмов:', e);
         return [];
       }
+    },
+
+    async clearLikes({ userId }) {
+      return await fetchJson(`${apiUrl}/favorite/clear-likes/${encodeURIComponent(userId)}`, {
+        method: 'DELETE',
+      });
+    },
+
+    async clearDislikes({ userId }) {
+      return await fetchJson(`${apiUrl}/favorite/clear-dislikes/${encodeURIComponent(userId)}`, {
+        method: 'DELETE',
+      });
     },
 
     async getMoviesByIds({ movieIds }) {
@@ -76,7 +94,6 @@ export function createApi({ apiUrl }) {
     },
 
     async getReviews({ tmdbId }) {
-      // По текущей реализации бэка reviews грузятся по tmdb_id.
       return await fetchJson(`${apiUrl}/movies/${encodeURIComponent(tmdbId)}/reviews`);
     },
 

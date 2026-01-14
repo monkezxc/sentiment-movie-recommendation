@@ -1,15 +1,13 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func
 from app.models.models import Favorite, Movie, Review
 
-# Функции для фильмов
 async def get_all_movies_id(session: AsyncSession):
     stmt = select(Movie.tmdb_id)
     result = await session.execute(stmt)
     return result.scalars().all()
 
 async def get_movies(skip: int, user_id: str, limit: int, session: AsyncSession):
-    # Сначала получаем список дизлайкнутых фильмов
     dislikes_stmt = select(Favorite.disliked_movies).where(Favorite.user_id == user_id)
     dislikes_result = await session.execute(dislikes_stmt)
     disliked_ids = dislikes_result.scalar_one_or_none()
@@ -20,7 +18,6 @@ async def get_movies(skip: int, user_id: str, limit: int, session: AsyncSession)
 
     stmt = select(Movie)
     
-    # Если есть дизлайки, исключаем их
     if disliked_ids:
         stmt = stmt.where(Movie.id.not_in(disliked_ids))
 
@@ -33,39 +30,52 @@ async def get_movies(skip: int, user_id: str, limit: int, session: AsyncSession)
     return result.scalars().all()
 
 async def get_movies_by_word(search: str, skip: int, user_id: str, limit: int, session: AsyncSession):
-    # Сначала получаем список дизлайкнутых фильмов
-    dislikes_stmt = select(Favorite.disliked_movies).where(Favorite.user_id == user_id)
-    dislikes_result = await session.execute(dislikes_stmt)
-    disliked_ids = dislikes_result.scalar_one_or_none()
-    
-    likes_stmt = select(Favorite.liked_movies).where(Favorite.user_id == user_id)
-    likes_result = await session.execute(likes_stmt)
-    liked_ids = likes_result.scalar_one_or_none()
+    """Поиск по названию (pg_trgm при наличии, иначе ILIKE)."""
+    q = (search or "").strip()
+    if not q:
+        return []
 
-    stmt = select(Movie)
-    
-    # Если есть дизлайки, исключаем их
-    if disliked_ids:
-        stmt = stmt.where(Movie.id.not_in(disliked_ids))
+    if len(q) < 3:
+        stmt = (
+            select(Movie)
+            .where(Movie.title.ilike(f"%{q}%"))
+            .offset(skip)
+            .limit(limit)
+        )
+        result = await session.execute(stmt)
+        return result.scalars().all()
 
-    if liked_ids:
-        stmt = stmt.where(Movie.id.not_in(liked_ids))
+    q_lower = q.lower()
+    similarity = func.similarity(func.lower(Movie.title), q_lower)
 
-    # Используем ilike для поиска без учета регистра (важно для кириллицы)
-    stmt = stmt.where(Movie.title.ilike(f'%{search}%'))
-        
-    stmt = stmt.offset(skip).limit(limit)
-    result = await session.execute(stmt)
-    return result.scalars().all()
+    SIM_THRESHOLD = 0.25
+
+    try:
+        stmt = (
+            select(Movie)
+            .where(similarity > SIM_THRESHOLD)
+            .order_by(similarity.desc())
+            .offset(skip)
+            .limit(limit)
+        )
+        result = await session.execute(stmt)
+        return result.scalars().all()
+    except Exception:
+        stmt = (
+            select(Movie)
+            .where(Movie.title.ilike(f"%{q}%"))
+            .offset(skip)
+            .limit(limit)
+        )
+        result = await session.execute(stmt)
+        return result.scalars().all()
 
 async def get_favorite_by_user(user_id: str, session: AsyncSession):
     stmt = select(Favorite).where(Favorite.user_id == user_id)
     result = await session.execute(stmt)
     return result.scalar_one_or_none()
 
-# Функции для отзывов
 async def get_reviews(tmdb_id: int, session: AsyncSession):
-    # Новые отзывы первыми (обратный порядок)
     stmt = (
         select(Review)
         .where(Review.movie_id == tmdb_id)
@@ -312,6 +322,34 @@ async def get_likes(user_id: str, session: AsyncSession):
 async def get_dislikes(user_id: str, session: AsyncSession):
     fav = await get_favorite_by_user(user_id, session)
     return fav.disliked_movies if fav else []
+
+
+async def clear_likes(user_id: str, session: AsyncSession):
+    fav = await get_favorite_by_user(user_id, session)
+
+    if not fav:
+        return None
+
+    if fav.liked_movies:
+        fav.liked_movies.clear()
+        await session.commit()
+        await session.refresh(fav)
+
+    return fav.liked_movies
+
+
+async def clear_dislikes(user_id: str, session: AsyncSession):
+    fav = await get_favorite_by_user(user_id, session)
+
+    if not fav:
+        return None
+
+    if fav.disliked_movies:
+        fav.disliked_movies.clear()
+        await session.commit()
+        await session.refresh(fav)
+
+    return fav.disliked_movies
 
 async def get_movies_by_query(skip: int, limit: int, session: AsyncSession):
     stmt = select(Movie.id, Movie.embedding)

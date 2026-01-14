@@ -1,4 +1,4 @@
-/* Карточки: контейнер стека, базовая карточка и состояния (active/next/exit). */
+/* Карточки: стек и состояния (active/next/exit). */
 
 .cards-wrapper {
     position: relative;
@@ -29,10 +29,16 @@
     background-repeat: no-repeat;
     user-select: none;
     transition: all 0.5s ease-in-out;
+    /* В закрытом состоянии контролируем жесты свайпа. */
     touch-action: none;
     z-index: var(--z-card);
     box-shadow: 10px 10px 20px black;
     background-color: #1a1a1a;
+}
+
+/* В открытой карточке разрешаем вертикальный скролл пальцем. */
+.card.is-open {
+    touch-action: pan-y pinch-zoom;
 }
 
 @media (width <= 1130px) {

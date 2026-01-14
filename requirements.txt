@@ -1,24 +1,25 @@
+# Единый список зависимостей проекта (root + KinoServer + model).
 # --- Общие утилиты ---
-python-dotenv==1.0.0
-requests==2.31.0
+python-dotenv
+requests
 
 # --- Bot (Telegram) ---
-aiogram==3.3.0
-asyncpg==0.29.0
-aiofiles==23.2.1
+aiogram
+asyncpg
+aiofiles
 
 # --- Parser / Rating (PostgreSQL) ---
-psycopg2-binary==2.9.9
+psycopg2-binary
 deep-translator==1.11.4
-googletrans==4.0.0-rc1
+googletrans
 
 # --- Dataset tools ---
-numpy>=1.26.0
-pandas>=2.2.0
+numpy
+pandas
 
 # --- Embeddings / ML ---
-sentence-transformers>=3.0.0
-huggingface-hub>=0.20.0
+sentence-transformers
+huggingface-hub
 transformers==4.57.3
 torch==2.9.1
 

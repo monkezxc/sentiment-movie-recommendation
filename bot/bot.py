@@ -20,6 +20,15 @@ logger = logging.getLogger(__name__)
 
 load_dotenv()
 
+def _get_database_url() -> str | None:
+    return os.getenv("BOT_DATABASE_URL")
+
+
+def _get_webapp_base_url() -> str:
+    """Базовый URL фронтенда."""
+    return os.getenv("WEBAPP_URL") or "https://vibemovie.ru"
+
+
 def ease_link_kb(user_link: str):
     inline_kb_list = [
         [InlineKeyboardButton(text="Войти в VibeMovie", web_app=WebAppInfo(url=user_link))],
@@ -37,7 +46,7 @@ async def get_username(user_id: int):
         user = await bot.get_chat(user_id)  
         return user.username  
     except Exception as e:  
-        print(f"Ошибка: {e}")  
+        logger.exception("Не удалось получить username (user_id=%s)", user_id)
         return None  
 
 
@@ -49,15 +58,20 @@ class Database:
         max_retries = 3
         for attempt in range(max_retries):
             try:
-                self.pool = await asyncpg.create_pool(
-                    host=os.getenv("DB_HOST", "localhost"),
-                    port=os.getenv("DB_PORT", "5432"),
-                    database=os.getenv("DB_NAME"),
-                    user=os.getenv("DB_USER"),
-                    password=os.getenv("DB_PASSWORD"),
-                    min_size=1,
-                    max_size=10,
-                )
+                db_url = _get_database_url()
+                if db_url:
+                    self.pool = await asyncpg.create_pool(dsn=db_url, min_size=1, max_size=10)
+                else:
+                    # Fallback для старых переменных.
+                    self.pool = await asyncpg.create_pool(
+                        host=os.getenv("DB_HOST", "localhost"),
+                        port=os.getenv("DB_PORT", "5432"),
+                        database=os.getenv("DB_NAME"),
+                        user=os.getenv("DB_USER"),
+                        password=os.getenv("DB_PASSWORD"),
+                        min_size=1,
+                        max_size=10,
+                    )
                 async with self.pool.acquire() as conn:
                     await conn.execute(
                         """
@@ -113,9 +127,6 @@ class Database:
                     link,
                     username,
                 )
-                # дебаг:
-                # - "INSERT 0 1" значит добавили строку
-                # - "INSERT 0 0" значит сработал conflict и ничего не добавилось
                 logger.info("add_user: %s (telegram_id=%s)", result, telegram_id)
         except Exception as e:
             logger.error(f"Error adding user: {e}")
@@ -141,19 +152,19 @@ async def start_handler(message: types.Message):
     try:
         if await db.user_exists(message.from_user.id):
             user_link = await db.get_user_link(message.from_user.id)
-            await message.answer(f"Добро пожаловать обратно!\nВаша ссылка: {user_link}")
+            await message.answer(f"Добро пожаловать обратно!\nНажмите на ссылку или кнопку ниже, чтобы войти в свой аккаунт.\n{user_link}",
+            reply_markup=ease_link_kb(user_link))
             return
 
         hashed_user_id = hash_user_id(message.from_user.id)
         username = message.from_user.username or message.from_user.full_name
         safe_username = quote(username or "")
 
-        user_link = f"http://127.0.0.1:5500/site/index.html?user={hashed_user_id}&username={safe_username}"
+        user_link = f"{_get_webapp_base_url().rstrip('/')}/?user={hashed_user_id}&username={safe_username}"
         await db.add_user(message.from_user.id, hashed_user_id, user_link, username)
         await message.answer(
-            f"Добро пожаловать, {username}!\n"
-            f"Нажмите кнопку ниже, чтобы войти в свой аккаунт.\n"
-            f"{user_link}"
+            f"Добро пожаловать, {username}!\nНажмите ссылку или кнопку ниже, чтобы войти в свой аккаунт.\n{user_link}",
+            reply_markup=ease_link_kb(user_link),
         )
     except Exception as e:
         logger.error(f"Error in start handler: {e}")
@@ -165,7 +176,10 @@ async def link_handler(message: types.Message):
     try:
         user_link = await db.get_user_link(message.from_user.id)
         if user_link:
-            await message.answer(f"Ваша ссылка: {user_link}")
+            await message.answer(
+            f"Нажмите на ссылку или кнопку ниже, чтобы войти в свой аккаунт.\n{user_link}",
+            reply_markup=ease_link_kb(user_link),
+            )
         else:
             await message.answer("Вы еще не зарегистрированы. Нажмите /start")
     except Exception as e:

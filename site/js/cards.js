@@ -8,11 +8,7 @@ import {
   resetEmotionInterface,
 } from './ui_reviews.js';
 
-/**
- * Контроллер карточек: отрисовка, свайпы, открытие/закрытие, лайк/дизлайк, отзывы.
- *
- * Важно: логика максимально повторяет старый `site/script.js`, но разнесена по файлам.
- */
+// Контроллер карточек: отрисовка, свайпы, открытие/закрытие, лайк/дизлайк, отзывы.
 export function createCardsController({
   state,
   api,
@@ -22,8 +18,89 @@ export function createCardsController({
   loaders,
   onFavoritesUpdated,
 }) {
-  // Плавное интерполирование.
+  // Линейная интерполяция для анимаций.
   const lerp = (start, end, t) => start * (1 - t) + end * t;
+
+  // Очередь like/dislike: UI не ждёт запись в БД.
+  const voteQueue = [];
+  let isFlushingVotes = false;
+  let isFavoritesDirty = false;
+  let favoritesRefreshTimerId = null;
+
+  function scheduleFavoritesRefresh() {
+    // Дребезг: не обновляем избранное на каждый свайп.
+    if (favoritesRefreshTimerId) return;
+
+    favoritesRefreshTimerId = setTimeout(async () => {
+      favoritesRefreshTimerId = null;
+
+      if (!isFavoritesDirty) return;
+      isFavoritesDirty = false;
+
+      try {
+        await onFavoritesUpdated();
+      } catch (e) {
+        console.error('Ошибка обновления списка лайкнутых фильмов:', e);
+        // Если обновление не удалось — повторим позже.
+        isFavoritesDirty = true;
+        scheduleFavoritesRefresh();
+      }
+    }, 300);
+  }
+
+  function scheduleVoteFlush() {
+    if (isFlushingVotes) return;
+
+    const run = () => {
+      flushVotes().catch((e) => console.error('Ошибка фоновой отправки лайков/дизлайков:', e));
+    };
+
+    // requestIdleCallback — если доступен, чтобы не мешать анимациям.
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      window.requestIdleCallback(run, { timeout: 1500 });
+    } else {
+      setTimeout(run, 0);
+    }
+  }
+
+  async function flushVotes() {
+    if (isFlushingVotes) return;
+    if (voteQueue.length === 0) return;
+
+    isFlushingVotes = true;
+    try {
+      while (voteQueue.length > 0) {
+        const { decision, movieId } = voteQueue.shift();
+
+        try {
+          if (decision === 'yes') {
+            await api.postLike({ userId, movieId });
+            isFavoritesDirty = true;
+          } else {
+            await api.postDislike({ userId, movieId });
+          }
+        } catch (e) {
+          console.error('Ошибка отправки лайка/дизлайка:', e);
+          // Простейший ретрай: вернём элемент обратно и попробуем позже.
+          voteQueue.unshift({ decision, movieId });
+          break;
+        }
+      }
+    } finally {
+      isFlushingVotes = false;
+      scheduleFavoritesRefresh();
+
+      // Если очередь не пуста — попробуем позже.
+      if (voteQueue.length > 0) {
+        setTimeout(scheduleVoteFlush, 1500);
+      }
+    }
+  }
+
+  function enqueueVotePersist(decision, movieId) {
+    voteQueue.push({ decision, movieId });
+    scheduleVoteFlush();
+  }
 
   function attachGlobalDragListeners() {
     document.addEventListener('mousemove', handleDragMove);
@@ -60,7 +137,7 @@ export function createCardsController({
     }
   }
 
-  // Отрисовка начального стека карт (активная и следующая).
+  // Стартовый стек: active + next.
   function renderInitialStack() {
     if (state.movies[0]) createAndAppendCard(0, 'active');
     if (state.movies[1]) createAndAppendCard(1, 'next');
@@ -83,8 +160,8 @@ export function createCardsController({
     if (movie.isEndCard) {
       card.classList.add('end-card');
       card.style.backgroundImage = isMobile
-        ? 'url("/site/images/not_found_vertical.png")'
-        : 'url("/site/images/not_found_horizontal.png")';
+        ? 'url("./images/not_found_vertical.png")'
+        : 'url("./images/not_found_horizontal.png")';
       card.style.backgroundSize = 'cover';
 
       const elementsToHide = [
@@ -129,7 +206,7 @@ export function createCardsController({
 
     extractColors(bgImage, card);
 
-    // Загружаем отзывы и рейтинги эмоций для карточки, если она активная или следующая.
+    // Подгружаем отзывы и эмоции для active/next.
     if (type === 'active' || type === 'next') {
       const tmdbId = card.dataset.tmdbId;
       loadMovieReviews(card, tmdbId);
@@ -145,8 +222,18 @@ export function createCardsController({
     const moreBtn = card.querySelector('[data-action="more"]');
     const closeBtn = card.querySelector('.close-card-button');
 
-    if (yesBtn) yesBtn.addEventListener('click', (e) => { e.stopPropagation(); handleVoteLogic('yes'); });
-    if (noBtn) noBtn.addEventListener('click', (e) => { e.stopPropagation(); handleVoteLogic('no'); });
+    if (yesBtn) {
+      yesBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        void handleVoteLogic('yes');
+      });
+    }
+    if (noBtn) {
+      noBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        void handleVoteLogic('no');
+      });
+    }
 
     if (moreBtn) {
       moreBtn.addEventListener('click', (e) => {
@@ -190,7 +277,6 @@ export function createCardsController({
       });
     }
 
-    // Обработчик для кнопок развертывания отзывов.
     card.addEventListener('click', (e) => {
       if (e.target.classList.contains('review-toggle-btn')) {
         e.stopPropagation();
@@ -214,7 +300,6 @@ export function createCardsController({
     card.addEventListener('touchstart', handleDragStart, { passive: false });
   }
 
-  // Логика голосования (лайк/дизлайк).
   async function handleVoteLogic(decision) {
     if (state.isAnimating) return;
 
@@ -225,14 +310,8 @@ export function createCardsController({
 
     const movieId = parseInt(activeCard.dataset.movieId, 10);
 
-    if (decision === 'yes') {
-      await api.postLike({ userId, movieId });
-    } else {
-      await api.postDislike({ userId, movieId });
-    }
-
-    // Обновляем список лайкнутых фильмов.
-    await onFavoritesUpdated();
+    // UI не ждёт БД: анимация сразу, запись — в фоне.
+    enqueueVotePersist(decision, movieId);
 
     const exitClass = decision === 'yes' ? 'exit-right' : 'exit-left';
     activeCard.classList.add(exitClass);
@@ -250,20 +329,25 @@ export function createCardsController({
     if (state.currentIndex >= 10) {
       let loader;
       if (state.emotionFilter) {
-        loader = () => loaders.loadMoviesByEmotion(state, api, { emotion: state.emotionFilter, limit: 10 });
+        loader = () =>
+          loaders.loadMoviesByEmotion(state, api, { emotion: state.emotionFilter, limit: 10, showLoader: false });
       } else if (state.semanticQuery) {
-        loader = () => loaders.loadMoviesSemantic(state, api, { query: state.semanticQuery, userId, limit: 10 });
+        loader = () =>
+          loaders.loadMoviesSemantic(state, api, { query: state.semanticQuery, userId, limit: 10, showLoader: false });
       } else {
-        loader = () => loaders.loadMovies(state, api, { userId, limit: 10 });
+        loader = () => loaders.loadMovies(state, api, { userId, limit: 10, showLoader: false });
       }
 
-      loader().then((loaded) => {
+      try {
+        const loaded = await loader();
         if (loaded) {
           // Сдвигаем "окно" на 10 фильмов, чтобы не раздувать память.
           state.movies.splice(0, 10);
           state.currentIndex -= 10;
         }
-      });
+      } catch (e) {
+        console.error('Ошибка подгрузки фильмов:', e);
+      }
     }
 
     const nextNextIndex = state.currentIndex + 1;
@@ -275,11 +359,10 @@ export function createCardsController({
     }, 500);
   }
 
-  // Начало перетаскивания карты.
   function handleDragStart(e) {
     const card = e.currentTarget;
 
-    // Если карточка финальная - выходим.
+    // Финальную карточку не двигаем.
     if (card.classList.contains('end-card')) return;
 
     if (!card.classList.contains('active') || state.cardOpen) return;
@@ -297,7 +380,6 @@ export function createCardsController({
     card.style.transition = 'none';
   }
 
-  // Обработка перемещения карты.
   function handleDragMove(e) {
     if (!state.isDragging || !state.currentCard) return;
 
@@ -309,7 +391,6 @@ export function createCardsController({
     const winW = window.innerWidth;
     const winH = window.innerHeight;
 
-    // Плавное увеличение прозрачности в зависимости от расстояния от центра.
     if (!state.cardOpen) {
       state.currentCard.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
 
@@ -318,9 +399,8 @@ export function createCardsController({
       }
     }
 
-    // Логика открытия карточки свайпом вниз.
     if (deltaY > 0) {
-      const triggerHeight = winH / 5;
+      const triggerHeight = winH / 4;
 
       if (deltaY > triggerHeight) {
         openCard(state.currentCard, false);
@@ -358,14 +438,12 @@ export function createCardsController({
         buttons.forEach((btn) => (btn.style.opacity = opacity));
       }
     } else {
-      // Если движение вниз не происходит, размеры карточки фиксированные.
       state.currentCard.style.width = '80%';
       state.currentCard.style.height = '100%';
       state.currentCard.style.borderRadius = '20px';
     }
   }
 
-  // Завершение перетаскивания.
   function handleDragEnd(e) {
     if (!state.isDragging || !state.currentCard) return;
 
@@ -391,7 +469,7 @@ export function createCardsController({
 
       const threshold = window.innerWidth * 0.25;
       if (Math.abs(deltaX) > threshold) {
-        handleVoteLogic(deltaX > 0 ? 'yes' : 'no');
+        void handleVoteLogic(deltaX > 0 ? 'yes' : 'no');
       }
     } else {
       state.isDragging = false;
@@ -410,7 +488,6 @@ export function createCardsController({
     return e.clientY;
   }
 
-  // Открытие карты на весь экран.
   function openCard(card, animated = false) {
     state.cardOpen = true;
     card.classList.add('is-open');
@@ -450,12 +527,18 @@ export function createCardsController({
       buttons.forEach((btn) => (btn.style.transition = transitionMain));
     }
 
+    // Учитываем safe-area на мобильных.
+    const isMobile = window.innerWidth < 768;
+    const safeAreaTop = isMobile ? 'env(safe-area-inset-top, 0px)' : '0px';
+    const safeAreaBottom = isMobile ? 'env(safe-area-inset-bottom, 0px)' : '0px';
+
     Object.assign(card.style, {
       position: 'fixed',
       borderRadius: '0',
       width: '100%',
-      height: '100%',
-      top: '0',
+      // Высота через `--app-height`, чтобы низ не “уезжал” под панели браузера.
+      height: `calc(var(--app-height, 100vh) - ${safeAreaTop} - ${safeAreaBottom})`,
+      top: safeAreaTop,
       left: '0',
       opacity: '1',
       transform: 'none',
@@ -465,7 +548,11 @@ export function createCardsController({
 
     const enableScroll = () => {
       card.style.overflowY = 'auto';
-      document.body.style.overflow = 'hidden';
+      // Не блокируем скролл на мобильных touch-устройствах.
+      const isMobileTouch = window.innerWidth < 768 && 'ontouchstart' in window;
+      if (!isMobileTouch) {
+        document.body.classList.add('modal-open');
+      }
     };
 
     if (animated) setTimeout(enableScroll, 500);
@@ -495,18 +582,16 @@ export function createCardsController({
     if (animated) setTimeout(showAdditional, 500);
     else showAdditional();
 
-    // Инициализируем интерфейс эмоций.
     initializeEmotionInterface(card);
   }
 
-  // Закрытие карты и возврат в стек.
   function closeCard(card) {
     state.cardOpen = false;
     card.classList.remove('is-open');
 
-    // Если карточка была открыта из меню лайкнутых — просто удаляем её.
+    // Карточка из меню лайкнутых: просто удаляем её.
     if (card.dataset.fromFavorites === 'true') {
-      document.body.style.overflow = '';
+      document.body.classList.remove('modal-open');
       card.remove();
       return;
     }
@@ -533,7 +618,7 @@ export function createCardsController({
       zIndex: '',
     });
 
-    document.body.style.overflow = '';
+    document.body.classList.remove('modal-open');
 
     const mainTransition = 'opacity 0.8s ease-in-out 0.3s';
     const infoTransition = 'opacity 0.2s ease-in-out';
@@ -590,7 +675,6 @@ export function createCardsController({
     extractColors(bgImage, card);
     setupCardEvents(card);
 
-    // Открываем сразу (без анимации), чтобы не мешать стеку свайпов.
     openCard(card, false);
   }
 

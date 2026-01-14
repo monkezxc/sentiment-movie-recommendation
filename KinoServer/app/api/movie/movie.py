@@ -38,11 +38,38 @@ from embedding.embedding import handle_query, to_embedding
 
 router = APIRouter(prefix="/movies", tags=["Фильмы"])
 
+def _review_to_response_dict(review) -> dict:
+    """
+    Приводим ORM Review к JSON-совместимому dict для ответа.
+    Важно: в старых данных эмоции могли быть NULL → фронт и схема ожидают числа.
+    """
+    def nz_int(v) -> int:
+        try:
+            return int(v) if v is not None else 0
+        except Exception:
+            return 0
+
+    return {
+        "id": int(getattr(review, "id")),
+        "movie_id": int(getattr(review, "movie_id")),
+        "text": getattr(review, "text"),
+        "username": getattr(review, "username", None),
+        "sadness_rating": nz_int(getattr(review, "sadness_rating", None)),
+        "optimism_rating": nz_int(getattr(review, "optimism_rating", None)),
+        "fear_rating": nz_int(getattr(review, "fear_rating", None)),
+        "anger_rating": nz_int(getattr(review, "anger_rating", None)),
+        "neutral_rating": nz_int(getattr(review, "neutral_rating", None)),
+        "worry_rating": nz_int(getattr(review, "worry_rating", None)),
+        "love_rating": nz_int(getattr(review, "love_rating", None)),
+        "fun_rating": nz_int(getattr(review, "fun_rating", None)),
+        "boredom_rating": nz_int(getattr(review, "boredom_rating", None)),
+    }
+
+
 
 def _proxify_tmdb_image_url(request: Request, url: str | None) -> str | None:
     """
     Если url ведёт на image.tmdb.org — переписываем на наш эндпоинт /images/tmdb/...
-    Иначе возвращаем как есть.
     """
     if not url:
         return None
@@ -55,7 +82,6 @@ def _proxify_tmdb_image_url(request: Request, url: str | None) -> str | None:
     if parsed.netloc != "image.tmdb.org":
         return url
 
-    # Ожидаем путь формата: /t/p/w780/xxxx.jpg
     parts = (parsed.path or "").strip("/").split("/")
     if len(parts) < 4:
         return url
@@ -65,17 +91,15 @@ def _proxify_tmdb_image_url(request: Request, url: str | None) -> str | None:
     size = parts[2]
     file_path = "/".join(parts[3:])
     try:
-        return str(request.url_for("tmdb_image", size=size, file_path=file_path))
+        # Стабильный путь для reverse-proxy (настраивается через PUBLIC_API_PREFIX).
+        prefix = (os.getenv("PUBLIC_API_PREFIX") or "/api").rstrip("/")
+        return f"{prefix}/images/tmdb/{size}/{file_path}"
     except Exception:
-        # Если url_for не сработал (например, нет request scope), просто вернём оригинал.
         return url
 
 
 def _movie_to_response_dict(request: Request, movie_obj) -> dict:
-    """
-    Явно формируем ответ для Movie, чтобы было понятно junior-разработчику,
-    и чтобы не мутировать SQLAlchemy-объекты (не помечать их “dirty”).
-    """
+    """Явно формируем ответ (без мутации SQLAlchemy объекта)."""
     return {
         "id": movie_obj.id,
         "title": movie_obj.title,
@@ -138,7 +162,7 @@ async def add_movie_review(
                              body.worry_rating, body.love_rating, body.fun_rating,
                              body.boredom_rating)
     reviews = await get_reviews(movie_id, session)
-    return reviews
+    return [_review_to_response_dict(r) for r in reviews]
 
 
 @router.get("/{movie_id}/reviews", response_model=list[ReviewResponse])
@@ -152,7 +176,7 @@ async def read_movie_reviews(
     - **movie_id**: ID фильма
     """
     reviews = await get_reviews(movie_id, session)
-    return reviews
+    return [_review_to_response_dict(r) for r in reviews]
 
 @router.get("/search", response_model=list[Movie])
 async def read_movies(

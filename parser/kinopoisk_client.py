@@ -1,6 +1,4 @@
-"""
-Модуль для работы с API Кинопоиска для получения отзывов
-"""
+"""Клиент Кинопоиска для получения отзывов."""
 import os
 import requests
 from typing import List, Optional, Dict
@@ -20,7 +18,6 @@ class KinopoiskClient:
             return []
         
         try:
-            # Пробуем разные варианты эндпоинтов
             urls_to_try = [
                 f"{self.base_url}/v1/reviews",
                 f"{self.base_url}/v2.2/films/{kinopoisk_id}/reviews",
@@ -35,10 +32,8 @@ class KinopoiskClient:
             
             for url in urls_to_try:
                 if '/films/' in url:
-                    # Для эндпоинта с ID в пути
                     params = {"page": 1}
                 else:
-                    # Для эндпоинта с filmId в параметрах
                     params = {"filmId": kinopoisk_id, "page": 1}
                 
                 try:
@@ -56,7 +51,6 @@ class KinopoiskClient:
                 return []
             
             if response.status_code != 200:
-                # Пробуем второй эндпоинт, если первый не сработал
                 if url_used == urls_to_try[0]:
                     alt_url = f"{self.base_url}/v2.2/films/{kinopoisk_id}/reviews"
                     alt_params = {"page": 1}
@@ -72,14 +66,12 @@ class KinopoiskClient:
             data = response.json()
             
             reviews = []
-            # Проверяем разные возможные структуры ответа
             items = data.get('items', []) or data.get('reviews', []) or data.get('data', []) or []
             
             if not items and isinstance(data, list):
                 items = data
             
             for item in items[:self.reviews_to_parse]:
-                # Пробуем разные поля для текста отзыва
                 review_text = (
                     item.get('review') or 
                     item.get('reviewText') or 
@@ -93,7 +85,6 @@ class KinopoiskClient:
                 if review_text and isinstance(review_text, str):
                     review_text = review_text.strip()
                     if review_text:
-                        # Проверяем, нужен ли перевод
                         review_text = self.translate_to_russian(review_text)
                         reviews.append(review_text)
             
@@ -106,11 +97,9 @@ class KinopoiskClient:
         if not text:
             return text
         
-        # Проверяем, есть ли уже русские символы
         if any('\u0400' <= char <= '\u04FF' for char in text):
             return text
         
-        # Пытаемся перевести с 3 попытками
         for attempt in range(1, 4):
             try:
                 translated = self.translator.translate(text)

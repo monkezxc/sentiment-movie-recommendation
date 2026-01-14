@@ -4,13 +4,10 @@ import psycopg2
 from pathlib import Path
 from dotenv import load_dotenv
 
-# Добавляем путь к корню проекта
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-# Загружаем переменные окружения из .env в корне проекта.
-# Важно: override=False — если переменная уже задана в окружении, .env её не перезапишет.
 ENV_PATH = PROJECT_ROOT / ".env"
 load_dotenv(dotenv_path=ENV_PATH, override=False)
 
@@ -24,20 +21,28 @@ class EmotionRatingsDB:
     def connect(self):
         """Подключение к базе данных"""
         try:
+            db_url = os.getenv("BOT_DATABASE_URL")
+            if db_url:
+                self.conn = psycopg2.connect(db_url)
+                print("Успешное подключение к базе данных (через DATABASE_URL)")
+                return
+
+            # Fallback для старых переменных (на всякий случай)
             missing = [k for k in ("DB_HOST", "DB_PORT", "DB_NAME", "DB_USER", "DB_PASSWORD") if not os.getenv(k)]
             if missing:
                 raise RuntimeError(
-                    "Не хватает переменных окружения для подключения к БД: "
+                    "Не хватает переменных окружения для подключения к БД. "
+                    "Задайте DATABASE_URL (рекомендуется) или старые переменные: "
                     + ", ".join(missing)
                     + f". Проверьте файл {ENV_PATH}"
                 )
 
             self.conn = psycopg2.connect(
-                host=os.getenv('DB_HOST'),
-                port=os.getenv('DB_PORT'),
-                database=os.getenv('DB_NAME'),
-                user=os.getenv('DB_USER'),
-                password=os.getenv('DB_PASSWORD')
+                host=os.getenv("DB_HOST"),
+                port=os.getenv("DB_PORT"),
+                database=os.getenv("DB_NAME"),
+                user=os.getenv("DB_USER"),
+                password=os.getenv("DB_PASSWORD"),
             )
             print("Успешное подключение к базе данных")
         except Exception as e:

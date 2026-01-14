@@ -1,7 +1,4 @@
-/**
- * Единое состояние приложения.
- * Здесь только данные/флаги — без DOM/сетевых запросов.
- */
+// Единое состояние приложения (только данные/флаги).
 export function createState() {
   return {
     movies: [],
@@ -13,7 +10,7 @@ export function createState() {
     isLoading: false,
     endCardAdded: false,
 
-    // Управление анимациями/drag.
+    // Анимации/drag.
     isAnimating: false,
     isDragging: false,
     startX: 0,
@@ -21,7 +18,7 @@ export function createState() {
     currentCard: null,
     cardOpen: false,
 
-    // Для плавного открытия карточки свайпом вниз.
+    // Для открытия карточки свайпом вниз.
     initialLeft: 0,
     initialTop: 0,
     startWidth: 0,

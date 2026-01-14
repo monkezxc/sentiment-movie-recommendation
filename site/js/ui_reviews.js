@@ -6,7 +6,6 @@ export function displayReviews(card, reviews) {
 
   reviewsList.innerHTML = '';
 
-  // Помечаем, что отзывы загружены.
   card.dataset.reviewsLoaded = 'true';
 
   if (reviews && reviews.length > 0) {
@@ -40,7 +39,7 @@ export function displayReviews(card, reviews) {
           : '<span class="review-emotion">Без эмоций</span>';
 
       const reviewText = review.text || 'Нет текста отзыва';
-      const showToggleBtn = reviewText.length > 100; // Кнопка только для длинного текста.
+      const showToggleBtn = reviewText.length > 100;
 
       reviewItem.innerHTML = `
         <div class="review-user-info">
@@ -101,7 +100,6 @@ export function initializeEmotionInterface(card) {
 
   if (!emotionInputsContainer || !addEmotionBtn) return;
 
-  // Защита от повторной инициализации (в старом коде было через dataset).
   if (card.dataset.emotionInterfaceInitialized) return;
   card.dataset.emotionInterfaceInitialized = 'true';
 
@@ -160,7 +158,6 @@ export function resetEmotionInterface(card) {
   const extraGroups = emotionInputsContainer.querySelectorAll('.emotion-input-group:nth-child(n+2)');
   extraGroups.forEach((group) => group.remove());
 
-  // Обновляем состояние кнопок после сброса.
   updateRemoveButtonStates(card);
 
   if (addEmotionBtn) addEmotionBtn.disabled = true;
@@ -170,7 +167,7 @@ function addEmotionGroup(card) {
   const emotionInputsContainer = card.querySelector('#emotion-inputs');
   const existingGroups = emotionInputsContainer?.querySelectorAll('.emotion-input-group') || [];
 
-  if (existingGroups.length >= 3) return; // Максимум 3 эмоции.
+  if (existingGroups.length >= 3) return;
 
   const emotionGroup = document.createElement('div');
   emotionGroup.className = 'emotion-input-group';
@@ -213,11 +210,8 @@ function removeEmotionGroup(groupElement) {
   const groups = container?.querySelectorAll('.emotion-input-group') || [];
 
   if (groups.length > 1) {
-    // Всегда должна быть хотя бы одна группа.
     groupElement.remove();
 
-    // В старом коде был селектор `.movie-card` (которого нет в HTML).
-    // Делаем безопаснее: ищем ближайшую `.card` и обновляем кнопки, если нашли.
     const card = container.closest('.card');
     if (card) updateRemoveButtonStates(card);
   }
@@ -237,7 +231,6 @@ function updateAddButtonState(card) {
     addEmotionBtn.disabled = existingGroups.length >= 3 || !allGroupsHaveEmotions;
   }
 
-  // Обновляем состояние кнопок удаления.
   updateRemoveButtonStates(card);
 }
 
@@ -249,7 +242,6 @@ function updateRemoveButtonStates(card) {
     const removeBtn = group.querySelector('.emotion-remove-btn');
     const emotionSelect = group.querySelector('.emotion-select');
 
-    // Кнопка удаления активна только если выбрана эмоция И есть больше одной группы.
     if (removeBtn) {
       removeBtn.disabled = !emotionSelect?.value || existingGroups.length <= 1;
     }

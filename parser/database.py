@@ -1,6 +1,4 @@
-"""
-Модуль для работы с базой данных PostgreSQL
-"""
+"""Работа с базой данных PostgreSQL для парсера."""
 import os
 import json
 import sys
@@ -9,18 +7,46 @@ from typing import Any, Iterable
 import requests
 import psycopg2
 from psycopg2 import sql
+from psycopg2.extras import Json
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 
-def get_review_emotion(review: str, api_url: str = "http://127.0.0.1:5001") -> tuple[str, float]:
+def _get_api_url() -> str:
+    """Базовый URL KinoServer (API_URL)."""
+    api_url = (os.getenv("API_URL") or "").strip().rstrip("/")
+    if not api_url:
+        raise RuntimeError(
+            "Не задан API_URL. Укажите базовый URL бэкенда, например 'https://<HOST>/api'."
+        )
+    if not (api_url.startswith("http://") or api_url.startswith("https://")):
+        raise RuntimeError(
+            f"API_URL должен быть абсолютным URL (http/https). Сейчас: {api_url!r}. "
+            "Пример: API_URL=https://<HOST>/api"
+        )
+    return api_url
+
+
+def _get_database_url() -> str | None:
+    """DATABASE_URL для подключения к Postgres (поддерживаем опечатку DATAABASE_URL)."""
+    return os.getenv("BOT_DATABASE_URL") or os.getenv("DATAABASE_URL")
+
+
+def _requests_verify_tls() -> bool:
+    raw = (os.getenv("REQUESTS_VERIFY_TLS") or "true").strip().lower()
+    return raw not in {"0", "false", "no", "off"}
+
+
+def get_review_emotion(review: str, api_url: str | None = None) -> tuple[str, float]:
     try:
+        api_url = (api_url or _get_api_url()).rstrip("/")
         response = requests.post(
             f"{api_url}/movies/review-emotion",
             json={"text": review},
-            timeout=60  # Таймаут 60 секунд на случай долгой обработки
+            timeout=60,  # Таймаут 60 секунд на случай долгой обработки
+            verify=_requests_verify_tls(),
         )
         response.raise_for_status()
         data = response.json()
@@ -28,6 +54,12 @@ def get_review_emotion(review: str, api_url: str = "http://127.0.0.1:5001") -> t
     except requests.exceptions.ConnectionError:
         print("Ошибка: Сервер недоступен. Убедитесь, что KinoServer запущен.")
         raise
+    except requests.exceptions.SSLError as e:
+        raise RuntimeError(
+            "Ошибка TLS при запросе review-emotion. "
+            "Если у вас self-signed HTTPS, задайте REQUESTS_VERIFY_TLS=false "
+            "или установите доверенный сертификат."
+        ) from e
     except Exception as e:
         print(f"Ошибка при получении эмоции': {e}")
         raise
@@ -42,12 +74,18 @@ class Database:
     def connect(self):
         """Подключение к базе данных"""
         try:
+            db_url = _get_database_url()
+            if db_url:
+                self.conn = psycopg2.connect(db_url)
+                return
+
+            # Fallback для старых переменных.
             self.conn = psycopg2.connect(
-                host=os.getenv('DB_HOST', 'localhost'),
-                port=os.getenv('DB_PORT', '5432'),
-                database=os.getenv('DB_NAME'),
-                user=os.getenv('DB_USER'),
-                password=os.getenv('DB_PASSWORD')
+                host=os.getenv("DB_HOST", "localhost"),
+                port=os.getenv("DB_PORT", "5432"),
+                database=os.getenv("DB_NAME"),
+                user=os.getenv("DB_USER"),
+                password=os.getenv("DB_PASSWORD"),
             )
         except Exception as e:
             raise
@@ -72,8 +110,8 @@ class Database:
                         country TEXT,
                         rating REAL,
                         tmdb_id INTEGER UNIQUE,
-                        reviews TEXT[],
-                        embedding float[]
+                        reviews JSONB,
+                        embedding JSONB
                     )
                 """)
                 self.conn.commit()
@@ -114,12 +152,10 @@ class Database:
         """Добавление фильма в базу данных"""
         try:
             with self.conn.cursor() as cursor:
-                print('встравляю фильм ', movie_data['title'])
-
                 reviews = self._normalize_reviews(movie_data.get("reviews"))
+                reviews_emotions = movie_data.get("reviews_emotions") or []
 
-                # Важно: имя колонки нельзя передавать через %s-плейсхолдер.
-                # Делаем whitelist → безопасно формируем SQL только из известных эмоций.
+                # Имя колонки нельзя передать через %s — используем whitelist.
                 emotion_to_column = {
                     "sadness": "sadness_rating",
                     "fear": "fear_rating",
@@ -132,22 +168,48 @@ class Database:
                     "boredom": "boredom_rating",
                 }
 
-                for review in reviews:
-                    review_emotion, confidence = get_review_emotion(review)
-                    column_name = emotion_to_column.get(review_emotion, "neutral_rating")
-                    # Умножаем базовую оценку 10 на уверенность модели
-                    emotion_rating = round(10 * confidence)
+                # Если эмоции по отзывам уже посчитаны — переиспользуем.
+                if isinstance(reviews_emotions, list) and reviews_emotions:
+                    for item in reviews_emotions:
+                        review_text = (item.get("text") or "").strip()
+                        if not review_text:
+                            continue
 
-                    insert_review_sql = sql.SQL(
-                        "INSERT INTO reviews (movie_id, text, {emotion_col}) VALUES (%s, %s, %s)"
-                    ).format(emotion_col=sql.Identifier(column_name))
+                        review_emotion = (item.get("emotion") or "neutral").strip()
+                        confidence = float(item.get("confidence") or 0)
 
-                    cursor.execute(
-                        insert_review_sql,
-                        (movie_data["tmdb_id"], review, emotion_rating),
-                    )
+                        column_name = emotion_to_column.get(review_emotion, "neutral_rating")
+                        emotion_rating = round(10 * confidence)
+
+                        insert_review_sql = sql.SQL(
+                            "INSERT INTO reviews (movie_id, text, {emotion_col}) VALUES (%s, %s, %s)"
+                        ).format(emotion_col=sql.Identifier(column_name))
+
+                        cursor.execute(
+                            insert_review_sql,
+                            (movie_data["tmdb_id"], review_text, emotion_rating),
+                        )
+                else:
+                    # Fallback: старое поведение — считаем эмоции прямо здесь.
+                    for review in reviews:
+                        review_emotion, confidence = get_review_emotion(review)
+                        column_name = emotion_to_column.get(review_emotion, "neutral_rating")
+                        # Умножаем базовую оценку 10 на уверенность модели
+                        emotion_rating = round(10 * confidence)
+
+                        insert_review_sql = sql.SQL(
+                            "INSERT INTO reviews (movie_id, text, {emotion_col}) VALUES (%s, %s, %s)"
+                        ).format(emotion_col=sql.Identifier(column_name))
+
+                        cursor.execute(
+                            insert_review_sql,
+                            (movie_data["tmdb_id"], review, emotion_rating),
+                        )
 
                 embedding = self._normalize_embedding(movie_data.get("embedding"))
+
+                reviews_value = Json(reviews)
+                embedding_value = Json(embedding) if embedding is not None else None
 
                 cursor.execute("""
                     INSERT INTO movies (
@@ -169,8 +231,8 @@ class Database:
                     movie_data['country'],
                     round(movie_data['rating'], 1),
                     movie_data['tmdb_id'],
-                    reviews,
-                    embedding,
+                    reviews_value,
+                    embedding_value,
                 ))
 
                 self.conn.commit()
@@ -187,9 +249,7 @@ class Database:
 
     @staticmethod
     def _normalize_reviews(value: Any) -> list[str]:
-        """
-        Приводим отзывы к ожидаемому формату для PostgreSQL TEXT[]: list[str].
-        """
+        """Приводит отзывы к list[str]."""
         if value is None:
             return []
         if isinstance(value, list):
@@ -201,21 +261,16 @@ class Database:
 
     @staticmethod
     def _normalize_embedding(value: Any) -> list[float] | None:
-        """
-        Приводим эмбеддинг к list[float] (PostgreSQL float[]).
-        Разрешаем: list[float], tuple, строку вида "[0.1, 0.2]" (JSON).
-        """
+        """Приводит эмбеддинг к list[float] (или None)."""
         if value is None:
             return None
 
-        # Уже список/кортеж чисел
         if isinstance(value, (list, tuple)):
             try:
                 return [float(x) for x in value]
             except (TypeError, ValueError):
                 return None
 
-        # Иногда эмбеддинг приходит строкой
         if isinstance(value, str):
             text = value.strip()
             if not text:
@@ -231,7 +286,6 @@ class Database:
                     return None
             return None
 
-        # Остальное — не поддерживаем
         return None
 
     def close(self):
