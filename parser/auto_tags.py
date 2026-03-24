@@ -171,34 +171,11 @@ def tags_genre(data):
 
     return result
 
-def tags_lists(data2):
-    result = []
-
-    for collection in data2.get("lists", []):
-        if collection != "all_content" and not collection.startswith("year19"):
-            # year19 дублирует мой tag_year
-            result.append(f"list_{collection}")
-
-    return set(result)
-
-def tags_personnel(data2):
-    result = []
-
-    for person in data2.get("persons", []):
-        pers_id = person.get("id")
-        pers_job = person.get("enProfession")
-        if pers_id is not None and pers_job in ("actor", "director", "producer", "writer"):
-            result.append(f"z_{pers_job}_{pers_id}")
-
-    return set(result)
-
-def create_tags(data: dict, data2: dict):
+def create_tags(data: dict):
     tags = set()
 
     tags |= tags_general(data)
     tags |= tags_country(data)
     tags |= tags_genre(data)
-    tags |= tags_lists(data2)
-    # tags |= tags_personnel(data2)
 
     return sorted(tag for tag in tags if tag is not None)

@@ -7,15 +7,12 @@ BASE_PATH = "_film_data"
 
 
 def load_json(path: str):
-    if os.path.isfile(path):
-        with open(path, "r", encoding="utf-8") as f:
+    with open(path, "r", encoding="utf-8") as f:
             return json.load(f)
-
-    return None
 
 
 def get_offline_reviews(kp_id: int):
-    f_path = os.path.join(BASE_PATH, f"kp_reviews/review_{kp_id}.json")
+    f_path = os.path.join(BASE_PATH, f"kp_reviews/reviews_{kp_id}.json")
 
     data = load_json(f_path)
     if data is None:
@@ -64,9 +61,8 @@ class OfflineFilmData:
             return self.str_not_specified
 
     def _get_m_personnel(self, data, job: str, limit: int=0) -> str:
-        sub_data = data.get("persons", [])
-        personnel = [person.get("name") or person.get("enName")
-                     for person in sub_data if person.get("enProfession") == job]
+        personnel = [person.get("nameRu") or person.get("nameEn")
+                     for person in data if person.get("professionKey") == job]
 
         if 0 < limit < len(personnel):
             personnel = personnel[:limit]
@@ -109,12 +105,7 @@ class OfflineFilmData:
 
     def _get_film(self, kp_id: int) -> Optional[dict[str, Any]]:
         data = load_json(os.path.join(BASE_PATH, "kp_films", f"entity_{kp_id}.json"))
-        data_advanced = load_json(os.path.join(BASE_PATH, "kp_extend_pk", f"advanced_{kp_id}.json"))
-
-        if data is None:
-            return None
-        if data_advanced is None:
-            data_advanced = {}
+        data_staff = load_json(os.path.join(BASE_PATH, "kp_staff", f"staff_{kp_id}.json"))
 
         film_title, foreign_title = self._get_m_title(data)
 
@@ -131,9 +122,9 @@ class OfflineFilmData:
             "duration": data.get("filmLength") or 0,
             "genre": self._get_m_names(data, "genres", "genre", capitalize=True),
 
-            "director": self._get_m_personnel(data_advanced, "director", 3),
-            "screenwriter": self._get_m_personnel(data_advanced, "writer", 3),
-            "actors": self._get_m_personnel(data_advanced, "actor", 10),
+            "director": self._get_m_personnel(data_staff, "DIRECTOR", 3),
+            "screenwriter": self._get_m_personnel(data_staff, "WRITER", 3),
+            "actors": self._get_m_personnel(data_staff, "ACTOR", 10),
 
             "description": data.get("description") or data.get("shortDescription") or self.str_na,
             "horizontal_poster_url": data.get("logoUrl") or data.get("coverUrl") or "",
@@ -141,7 +132,7 @@ class OfflineFilmData:
             "country": self._get_m_names(data, "countries", "country"),
             "rating": self._get_m_average_rating(data),
 
-            "tags": create_tags(data, data_advanced)
+            "tags": create_tags(data)
         }
 
         return result
@@ -158,11 +149,12 @@ class OfflineFilmData:
             if film_data is not None:
                 result.append(film_data)
 
+        result.sort(key=lambda f: f["kinopoisk_id"])
         print("Загрузил", len(result), "фильмов!")
         return result
 
 
 if __name__ == "__main__":
-    with open("demo.json", "w", encoding="utf-8") as f0:
+    with open(f"{BASE_PATH}/demo.json", "w", encoding="utf-8") as f0:
         dat = OfflineFilmData().get_all_films()
         json.dump(dat, f0, indent=4, ensure_ascii=False)

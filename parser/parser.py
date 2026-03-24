@@ -151,11 +151,11 @@ class MovieParser:
 
         self.movies_to_parse = int(os.getenv('MOVIES_TO_PARSE', 20))
 
-    def _translate_online(self, text, tries=3, force_trans=False):
+    def _translate_online(self, text, tries=3):
         for _ in range(tries):
             try:
                 translated = self.translator.translate(text)
-                print("Перевел:", text, "->", translated)
+                # print("Перевел:", text, "->", translated)
                 return translated
             except:
                 pass
