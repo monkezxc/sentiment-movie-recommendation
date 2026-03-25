@@ -7,8 +7,10 @@ BASE_PATH = "_film_data"
 
 
 def load_json(path: str):
-    with open(path, "r", encoding="utf-8") as f:
-            return json.load(f)
+    if os.path.exists(path):
+        with open(path, "r", encoding="utf-8") as f:
+                return json.load(f)
+    return None
 
 
 def get_offline_reviews(kp_id: int):
@@ -61,6 +63,9 @@ class OfflineFilmData:
             return self.str_not_specified
 
     def _get_m_personnel(self, data, job: str, limit: int=0) -> str:
+        if data is None:
+            return self.str_not_specified
+
         personnel = [person.get("nameRu") or person.get("nameEn")
                      for person in data if person.get("professionKey") == job]
 
@@ -137,7 +142,7 @@ class OfflineFilmData:
 
         return result
 
-    def get_all_films(self) -> list[dict[str, Any]]:
+    def get_all_films(self, order_by="kinopoisk_id", order_reverse=False) -> list[dict[str, Any]]:
         work_dir = os.path.join(BASE_PATH, "kp_films")
         result = []
 
@@ -149,7 +154,7 @@ class OfflineFilmData:
             if film_data is not None:
                 result.append(film_data)
 
-        result.sort(key=lambda f: f["kinopoisk_id"])
+        result.sort(key=lambda f: f[order_by], reverse=order_reverse)
         print("Загрузил", len(result), "фильмов!")
         return result
 
