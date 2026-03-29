@@ -18,16 +18,17 @@ def get_offline_reviews(kp_id: int):
 
     data = load_json(f_path)
     if data is None:
-        return []
+        return 0, []
 
+    total_revs = data.get("total", 0)
     reviews = []
 
     for r_data in data.get("items"):
-        text = r_data.get("description")
+        text = r_data.get("description") or r_data.get("title")
         if text is not None:
             reviews.append(text)
 
-    return reviews
+    return total_revs, reviews
 
 
 class OfflineFilmData:
@@ -113,6 +114,7 @@ class OfflineFilmData:
         data_staff = load_json(os.path.join(BASE_PATH, "kp_staff", f"staff_{kp_id}.json"))
 
         film_title, foreign_title = self._get_m_title(data)
+        total_revs, reviews_part = get_offline_reviews(kp_id)
 
         if data.get("type") != "FILM":
             # print(film_title, "- не фильм!")
@@ -137,15 +139,18 @@ class OfflineFilmData:
             "country": self._get_m_names(data, "countries", "country"),
             "rating": self._get_m_average_rating(data),
 
-            "tags": create_tags(data)
+            "tags": create_tags(data),
+            "popularity_by_revs": total_revs,
+            "reviews": reviews_part
         }
 
         return result
 
-    def get_all_films(self, order_by="kinopoisk_id", order_reverse=False) -> list[dict[str, Any]]:
+    def get_all_films(self) -> list[dict[str, Any]]:
         work_dir = os.path.join(BASE_PATH, "kp_films")
         result = []
 
+        # Загружаем
         for film_file in os.listdir(work_dir):
             if not film_file.lower().endswith(".json"): continue
 
@@ -154,7 +159,11 @@ class OfflineFilmData:
             if film_data is not None:
                 result.append(film_data)
 
+        # Сортируем
+        order_by = os.getenv("PARSER_ORDER_BY", "kinopoisk_id")
+        order_reverse = bool(os.getenv("PARSER_ORDER_REVERSE"))
         result.sort(key=lambda f: f[order_by], reverse=order_reverse)
+
         print("Загрузил", len(result), "фильмов!")
         return result
 

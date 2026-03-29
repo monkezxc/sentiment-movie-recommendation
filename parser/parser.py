@@ -8,7 +8,7 @@ from collections import defaultdict
 from deep_translator import GoogleTranslator
 
 from database import Database, get_review_emotion
-from offline_parser import OfflineFilmData, get_offline_reviews
+from offline_parser import OfflineFilmData
 
 
 def _get_api_url() -> str:
@@ -198,13 +198,12 @@ class MovieParser:
 
             print(f"\nнайден фильм: {parsed_data['title']}")
 
+            # Переводим, если надо
             if parsed_data.get("title_foreign"):
                 parsed_data["title"] = self._translate_online(parsed_data["title"])
                 parsed_data["title_foreign"] = False
-
-            reviews = get_offline_reviews(kinopoisk_id)
-            # reviews = [self._translate_online(review) for review in reviews]
-            parsed_data["reviews"] = reviews
+            # parsed_data["reviews"] = [self._translate_online(review)
+            #                           for review in parsed_data.get("reviews", [])]
 
             # Классифицируем отзывы по эмоциям один раз и переиспользуем дальше.
             reviews_analyzed = analyze_reviews_emotions(
