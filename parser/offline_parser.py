@@ -171,4 +171,5 @@ class OfflineFilmData:
 if __name__ == "__main__":
     with open(f"{BASE_PATH}/demo.json", "w", encoding="utf-8") as f0:
         dat = OfflineFilmData().get_all_films()
+        for film in dat: film["reviews"] = []
         json.dump(dat, f0, indent=4, ensure_ascii=False)

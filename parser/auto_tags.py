@@ -165,7 +165,7 @@ def tags_genre(data):
     for genre in data.get("genres", []):
         if "genre" in genre:
             genre_ru = genre.get("genre")
-            genre_en = genre_tans.get(genre_ru)
+            genre_en = genre_tans.get(genre_ru, "other")
             if genre_en is not None:
                 result.add("genre_"+genre_en)
 
