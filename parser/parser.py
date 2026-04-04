@@ -9,7 +9,7 @@ from collections import defaultdict
 from deep_translator import GoogleTranslator
 
 from database import Database, get_review_emotion
-from offline_parser import OfflineFilmData, get_offline_reviews
+from offline_parser import OfflineFilmData, get_offline_reviews, sort_film_data
 
 
 def _get_api_url() -> str:
@@ -198,6 +198,7 @@ class MovieParser:
 
         parsed_count = 0
 
+        sort_film_data(self.film_data)
         for parsed_data in self.film_data:
             kinopoisk_id = parsed_data["kinopoisk_id"]
             if self.db.movie_exists(kinopoisk_id):

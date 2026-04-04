@@ -31,6 +31,13 @@ def get_offline_reviews(kp_id: int):
     return total_revs, reviews
 
 
+def sort_film_data(film_data: list):
+    order_by = os.getenv("PARSER_ORDER_BY", "kinopoisk_id")
+    order_reverse = bool(os.getenv("PARSER_ORDER_REVERSE"))
+
+    film_data.sort(key=lambda f: f[order_by], reverse=order_reverse)
+
+
 class OfflineFilmData:
     def __init__(self):
         self.str_na = "Н/Д"
@@ -156,11 +163,6 @@ class OfflineFilmData:
             if film_data is not None:
                 result.append(film_data)
 
-        # Сортируем
-        order_by = os.getenv("PARSER_ORDER_BY", "kinopoisk_id")
-        order_reverse = bool(os.getenv("PARSER_ORDER_REVERSE"))
-        result.sort(key=lambda f: f[order_by], reverse=order_reverse)
-
         print("Загрузил", len(result), "фильмов!")
         return result
 
@@ -168,4 +170,5 @@ class OfflineFilmData:
 if __name__ == "__main__":
     with open(f"{BASE_PATH}/compiled.json", "w", encoding="utf-8") as f0:
         dat = OfflineFilmData().get_all_films()
+        sort_film_data(dat)
         json.dump(dat, f0, indent=4, ensure_ascii=False)
