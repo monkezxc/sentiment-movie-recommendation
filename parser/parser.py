@@ -1,4 +1,5 @@
 """Парсер фильмов из TMDB."""
+import json
 import os
 import sys
 import requests
@@ -8,7 +9,7 @@ from collections import defaultdict
 from deep_translator import GoogleTranslator
 
 from database import Database, get_review_emotion
-from offline_parser import OfflineFilmData
+from offline_parser import OfflineFilmData, get_offline_reviews
 
 
 def _get_api_url() -> str:
@@ -146,10 +147,15 @@ class MovieParser:
         load_dotenv()
         
         self.db = Database()
-        self.offline_db = OfflineFilmData()
+        self.data_file = "_film_data/compiled.json"
         self.translator = GoogleTranslator(source='auto', target='ru')
 
         self.movies_to_parse = int(os.getenv('MOVIES_TO_PARSE', 20))
+        if os.path.exists(self.data_file):
+            with open(self.data_file, "r", encoding="utf-8") as f1:
+                self.film_data = json.load(f1)
+        else:
+            self.film_data = OfflineFilmData().get_all_films()
 
     def _translate_online(self, text, tries=3):
         for _ in range(tries):
@@ -191,7 +197,8 @@ class MovieParser:
         """Основной метод запуска парсера"""
 
         parsed_count = 0
-        for parsed_data in self.offline_db.get_all_films():
+
+        for parsed_data in self.film_data:
             kinopoisk_id = parsed_data["kinopoisk_id"]
             if self.db.movie_exists(kinopoisk_id):
                 continue
@@ -202,10 +209,9 @@ class MovieParser:
             if parsed_data.get("title_foreign"):
                 parsed_data["title"] = self._translate_online(parsed_data["title"])
                 parsed_data["title_foreign"] = False
-            # parsed_data["reviews"] = [self._translate_online(review)
-            #                           for review in parsed_data.get("reviews", [])]
 
             # Классифицируем отзывы по эмоциям один раз и переиспользуем дальше.
+            parsed_data["reviews"] = get_offline_reviews(parsed_data["kinopoisk_id"])[1]
             reviews_analyzed = analyze_reviews_emotions(
                 parsed_data.get("reviews", []),
                 api_url="",

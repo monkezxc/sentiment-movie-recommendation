@@ -113,13 +113,11 @@ class OfflineFilmData:
         data = load_json(os.path.join(BASE_PATH, "kp_films", f"entity_{kp_id}.json"))
         data_staff = load_json(os.path.join(BASE_PATH, "kp_staff", f"staff_{kp_id}.json"))
 
-        film_title, foreign_title = self._get_m_title(data)
-        total_revs, reviews_part = get_offline_reviews(kp_id)
-
         if data.get("type") != "FILM":
             # print(film_title, "- не фильм!")
             return None
 
+        film_title, foreign_title = self._get_m_title(data)
         result = {
             "kinopoisk_id": kp_id,
 
@@ -140,8 +138,7 @@ class OfflineFilmData:
             "rating": self._get_m_average_rating(data),
 
             "tags": create_tags(data),
-            "popularity_by_revs": total_revs,
-            "reviews": reviews_part
+            "total_reviews": get_offline_reviews(kp_id)[0],
         }
 
         return result
@@ -169,7 +166,6 @@ class OfflineFilmData:
 
 
 if __name__ == "__main__":
-    with open(f"{BASE_PATH}/demo.json", "w", encoding="utf-8") as f0:
+    with open(f"{BASE_PATH}/compiled.json", "w", encoding="utf-8") as f0:
         dat = OfflineFilmData().get_all_films()
-        for film in dat: film["reviews"] = []
         json.dump(dat, f0, indent=4, ensure_ascii=False)
