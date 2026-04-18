@@ -296,6 +296,54 @@ export function createCardsController({
       }
     });
 
+    // Обработчик двойного клика для открытия/закрытия карточки
+    card.addEventListener('dblclick', (e) => {
+      // Игнорируем двойной клик на интерактивных элементах
+      if (e.target.closest('button, input, textarea, select')) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (card.classList.contains('is-open')) {
+        closeCard(card);
+      } else if (!state.cardOpen && card.classList.contains('active')) {
+        openCard(card, true);
+      }
+    });
+
+    // Для touch устройств: двойной тап
+    let lastTap = 0;
+    let tapCount = 0;
+
+    card.addEventListener('touchend', (e) => {
+      // Игнорируем на интерактивных элементах
+      if (e.target.closest('button, input, textarea, select')) return;
+
+      const currentTime = new Date().getTime();
+      const tapLength = currentTime - lastTap;
+
+      if (tapLength < 300 && tapLength > 0) {
+        // Двойной тап обнаружен
+        tapCount++;
+        if (tapCount === 2) {
+          e.preventDefault();
+          e.stopPropagation();
+
+          if (card.classList.contains('is-open')) {
+            closeCard(card);
+          } else if (!state.cardOpen && card.classList.contains('active')) {
+            openCard(card, true);
+          }
+
+          tapCount = 0; // Сбрасываем счетчик
+        }
+      } else {
+        tapCount = 1;
+      }
+
+      lastTap = currentTime;
+    });
+
     card.addEventListener('mousedown', handleDragStart);
     card.addEventListener('touchstart', handleDragStart, { passive: false });
   }

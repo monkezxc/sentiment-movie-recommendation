@@ -68,6 +68,7 @@ class Movie(BaseModel):
     country: str | None
     rating: float | None
     tmdb_id: int | None
+    kinopoisk_id: int | None = None
     embedding: list[float] | None
     reviews: list[str] | None
 

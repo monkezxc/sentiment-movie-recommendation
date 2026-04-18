@@ -21,5 +21,12 @@ site/movies.json
 site/env.js
 
 dataset/
+<<<<<<< Updated upstream
 _film_data
 docker-compose.yml
+=======
+
+docker-compose.yml
+
+movie_data/
+>>>>>>> Stashed changes

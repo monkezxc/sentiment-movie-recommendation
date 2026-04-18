@@ -116,6 +116,7 @@ def _movie_to_response_dict(request: Request, movie_obj) -> dict:
         "country": movie_obj.country,
         "rating": movie_obj.rating,
         "tmdb_id": movie_obj.tmdb_id,
+        "kinopoisk_id": getattr(movie_obj, "kinopoisk_id", None),
         "embedding": movie_obj.embedding,
         "reviews": movie_obj.reviews,
     }

@@ -39,3 +39,16 @@ async def init_all_databases() -> None:
             ))
         except Exception:
             pass
+
+        try:
+            await conn.execute(
+                text("ALTER TABLE movies ADD COLUMN IF NOT EXISTS kinopoisk_id INTEGER")
+            )
+            await conn.execute(
+                text(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS movies_kinopoisk_id_uidx "
+                    "ON movies (kinopoisk_id) WHERE kinopoisk_id IS NOT NULL"
+                )
+            )
+        except Exception:
+            pass

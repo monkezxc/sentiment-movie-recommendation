@@ -152,8 +152,8 @@ async def start_handler(message: types.Message):
     try:
         if await db.user_exists(message.from_user.id):
             user_link = await db.get_user_link(message.from_user.id)
-            await message.answer(f"Добро пожаловать обратно!\nНажмите на ссылку или кнопку ниже, чтобы войти в свой аккаунт.\n{user_link}",
-            reply_markup=ease_link_kb(user_link))
+            await message.answer(f"Добро пожаловать обратно!\nНажмите на ссылку или кнопку ниже, чтобы войти в свой аккаунт.\n{user_link}")
+            # to add inline button use reply_markup=ease_link_kb(user_link)
             return
 
         hashed_user_id = hash_user_id(message.from_user.id)

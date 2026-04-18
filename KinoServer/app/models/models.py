@@ -72,6 +72,7 @@ class Movie(Base):
     country: Mapped[str] = mapped_column(String, nullable=True)
     rating: Mapped[float] = mapped_column(Float, nullable=True)
     tmdb_id: Mapped[int] = mapped_column(Integer, unique=True, nullable=True)
+    kinopoisk_id: Mapped[int | None] = mapped_column(Integer, unique=True, nullable=True)
     embedding: Mapped[list[float]] = mapped_column(
         CoerceMutableList.as_mutable(JSON), nullable=True, default=list
     )

@@ -10,24 +10,33 @@ from app.config.config_reader import config
 app = FastAPI()
 
 def _read_cors_origins() -> list[str]:
-    """Читаем список origin'ов из env (CORS_ALLOW_ORIGINS="https://a,https://b")."""
+    """Список origin'ов для CORS: из env + локальные дефолты (без дублей)."""
     raw = (os.getenv("CORS_ALLOW_ORIGINS") or "").strip()
-    if raw:
-        return [o.strip() for o in raw.split(",") if o.strip()]
+    from_env = [o.strip() for o in raw.split(",") if o.strip()] if raw else []
 
-    # Дефолт: локальная разработка.
-    return [
+    # Локальная разработка (Live Server, Vite, и т.д.).
+    defaults = [
         "http://localhost",
         "http://localhost:5173",
+        "http://localhost:5500",
         "https://localhost",
         "https://localhost:5173",
         "http://127.0.0.1",
         "http://127.0.0.1:5173",
+        "http://127.0.0.1:5500",
         "http://127.0.0.1:8080",
         "https://127.0.0.1",
         "https://127.0.0.1:5173",
         "https://127.0.0.1:8080",
     ]
+
+    seen: set[str] = set()
+    out: list[str] = []
+    for origin in from_env + defaults:
+        if origin not in seen:
+            seen.add(origin)
+            out.append(origin)
+    return out
 
 
 app.add_middleware(
@@ -46,4 +55,4 @@ for router in routers:
     app.include_router(router)
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=config.APP_PORT, log_level="info")
+    uvicorn.run(app, host="127.0.0.1", port=config.APP_PORT, log_level="info")

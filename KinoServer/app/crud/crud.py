@@ -207,7 +207,8 @@ async def get_movies_by_emotion(emotion: str, skip: int, limit: int, session: As
     query = text(f"""
         SELECT m.id, m.title, m.release_year, m.duration, m.genre, m.director,
                m.screenwriter, m.actors, m.description, m.horizontal_poster_url,
-               m.vertical_poster_url, m.country, m.rating, m.tmdb_id, m.embedding, m.reviews
+               m.vertical_poster_url, m.country, m.rating, m.tmdb_id, m.kinopoisk_id,
+               m.embedding, m.reviews
         FROM movies m
         JOIN ratings r ON m.tmdb_id = r.movie_id
         WHERE r.{column_name} > 0
@@ -236,8 +237,9 @@ async def get_movies_by_emotion(emotion: str, skip: int, limit: int, session: As
             country=row[11],
             rating=row[12],
             tmdb_id=row[13],
-            embedding=row[14],
-            reviews=row[15]
+            kinopoisk_id=row[14],
+            embedding=row[15],
+            reviews=row[16]
         )
         movies.append(movie)
 

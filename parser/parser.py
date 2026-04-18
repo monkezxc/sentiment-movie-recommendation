@@ -228,6 +228,85 @@ class MovieParser:
             if parsed_count >= self.movies_to_parse:
                 break
 
+<<<<<<< Updated upstream
+=======
+            results = popular_movies['results']
+            if not results:
+                break
+
+            for movie in results:
+                if parsed_count >= self.movies_to_parse:
+                    break
+
+                movie_id = movie.get('id')
+                
+                if self.db.movie_exists(movie_id):
+                    continue
+
+                details = self.tmdb.get_movie_details(movie_id)
+                
+                if not details:
+                    continue
+
+                parsed_data = self.tmdb.parse_movie_data(details)
+                
+                if parsed_data:
+                    print(f"найден фильм: {parsed_data['title']}")
+
+                if parsed_data is None:
+                    continue
+
+                kinopoisk_id = self.kinopoisk.search_by_title(
+                    parsed_data['title'], 
+                    parsed_data['release_year']
+                )
+                parsed_data['kinopoisk_id'] = kinopoisk_id
+
+                if kinopoisk_id:
+                    reviews = self.kinopoisk.get_reviews(kinopoisk_id)
+                    parsed_data['reviews'] = reviews if reviews else []
+                else:
+                    parsed_data['reviews'] = []
+
+                # Классифицируем отзывы по эмоциям один раз и переиспользуем дальше.
+                reviews_analyzed = analyze_reviews_emotions(
+                    parsed_data.get("reviews", []),
+                    api_url="",
+                    max_reviews=int(os.getenv("EMBEDDING_REVIEWS_MAX", "30")),
+                )
+                parsed_data["reviews_emotions"] = reviews_analyzed
+
+                # Текст для эмбеддинга (с учётом топ-эмоций по отзывам).
+                embedding_text = f"""
+                {parsed_data['description']}
+                {parsed_data['genre']}
+                {parsed_data['director']}
+                {parsed_data['screenwriter']}
+                {parsed_data['actors']}
+                год выпуска {parsed_data['release_year']}
+                """
+
+                top_emotions = get_top_emotions_from_analyzed(reviews_analyzed, top_n=3)
+                if top_emotions:
+                    embedding_text += "\n" + "Эмоции в отзывах (топ-3): " + ", ".join(top_emotions) + "\n"
+
+                try:
+                    parsed_data['embedding'] = get_embedding_from_api(
+                        embedding_text,
+                        api_url="",
+                    )
+                except Exception:
+                    parsed_data['embedding'] = None
+                    print(f"[WARN] Эмбеддинг не получен, сохраняю без него: {parsed_data['title']}")
+
+
+                if self.db.insert_movie(parsed_data):
+                    parsed_count += 1
+                    print(f"Добавлен фильм '{parsed_data['title']}' {parsed_count}/{self.movies_to_parse}")
+
+            page += 1
+
+>>>>>>> Stashed changes
         self.db.close()
 
 
