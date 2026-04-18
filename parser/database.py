@@ -3,7 +3,7 @@ import os
 import json
 import sys
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 import requests
 import psycopg2
 from psycopg2 import sql
@@ -109,9 +109,11 @@ class Database:
                         vertical_poster_url TEXT,
                         country TEXT,
                         rating REAL,
-                        tmdb_id INTEGER UNIQUE,
+                        tmdb_id INTEGER,
+                        kinopoisk_id INTEGER UNIQUE,
                         reviews JSONB,
-                        embedding JSONB
+                        embedding JSONB,
+                        tags JSONB
                     )
                 """)
                 self.conn.commit()
@@ -138,11 +140,11 @@ class Database:
             self.conn.rollback()
             raise
 
-    def movie_exists(self, tmdb_id):
+    def movie_exists(self, kinopoisk_id):
         """Проверка наличия фильма в базе данных"""
         try:
             with self.conn.cursor() as cursor:
-                cursor.execute("SELECT COUNT(*) FROM movies WHERE tmdb_id = %s", (tmdb_id,))
+                cursor.execute("SELECT COUNT(*) FROM movies WHERE kinopoisk_id = %s", (kinopoisk_id,))
                 count = cursor.fetchone()[0]
                 return count > 0
         except:
@@ -187,7 +189,7 @@ class Database:
 
                         cursor.execute(
                             insert_review_sql,
-                            (movie_data["tmdb_id"], review_text, emotion_rating),
+                            (movie_data["kinopoisk_id"], review_text, emotion_rating),
                         )
                 else:
                     # Fallback: старое поведение — считаем эмоции прямо здесь.
@@ -203,20 +205,21 @@ class Database:
 
                         cursor.execute(
                             insert_review_sql,
-                            (movie_data["tmdb_id"], review, emotion_rating),
+                            (movie_data["kinopoisk_id"], review, emotion_rating),
                         )
 
                 embedding = self._normalize_embedding(movie_data.get("embedding"))
 
                 reviews_value = Json(reviews)
                 embedding_value = Json(embedding) if embedding is not None else None
+                tags_value = Json(movie_data.get("tags", []))
 
                 cursor.execute("""
                     INSERT INTO movies (
                         title, release_year, duration, genre, director, screenwriter,
                         actors, description, horizontal_poster_url, vertical_poster_url,
-                        country, rating, tmdb_id, reviews, embedding
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        country, rating, kinopoisk_id, reviews, embedding, tags
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """, (
                     movie_data['title'],
                     movie_data['release_year'],
@@ -230,9 +233,10 @@ class Database:
                     movie_data['vertical_poster_url'],
                     movie_data['country'],
                     round(movie_data['rating'], 1),
-                    movie_data['tmdb_id'],
+                    movie_data['kinopoisk_id'],
                     reviews_value,
                     embedding_value,
+                    tags_value
                 ))
 
                 self.conn.commit()
