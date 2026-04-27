@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.db import get_session
 from urllib.parse import urlparse
 
+from app.api.emotion import get_emotion_genres
 from app.schemas.schemas import (
     Movie,
     ReviewCreate,
@@ -334,3 +335,11 @@ async def get_movies_by_emotion_endpoint(
     movies = await get_movies_by_emotion(emotion, skip, limit, session)
     return [_movie_to_response_dict(request, m) for m in movies]
 
+######
+
+@router.post("/genres-by-survey", response_model=list[str])
+async def get_genres_by_survey(request: Request,
+                               q1: int, q2: int, q3: int, q4: int, q5: int, q6: int):
+
+    answers = [q1, q2, q3, q4, q5, q6]
+    return await get_emotion_genres(answers)
