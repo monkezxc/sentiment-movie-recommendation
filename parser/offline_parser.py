@@ -139,7 +139,7 @@ class OfflineFilmData:
             "actors": self._get_m_personnel(data_staff, "ACTOR", 10),
 
             "description": data.get("description") or data.get("shortDescription") or self.str_na,
-            "horizontal_poster_url": data.get("logoUrl") or data.get("coverUrl") or "",
+            "horizontal_poster_url": data.get("coverUrl") or data.get("logoUrl") or data.get("posterUrl") or "",
             "vertical_poster_url": data.get("posterUrl") or "",
             "country": self._get_m_names(data, "countries", "country"),
             "rating": self._get_m_average_rating(data),
