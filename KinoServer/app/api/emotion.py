@@ -1,42 +1,50 @@
 deltas = [
-    [(+5, -6), (+7, +6), (-3, -5), (+3, +8)],
-    [(-2, -3), (+6, -4), (-4, -7), (+4, -2)],
-    [(-4, -5), (+5, +3), (+4, +7), (+6, +5)],
-    [(+3, -5), (+4, +4), (+8, -6), (-2, -9)],
-    [(-5, -4), (-3, +6), (+0, +0), (+5, +5)],
-    [(+2, -3), (+7, -6), (+4, +8), (-6, 10)]
+    [(+2, -6), (+8, -2), (+5, +8), (+3, -3)],
+    [(-3, -7), (+7, +7), (+6, -5), (+4, +5)],
+    [(0,  -4), (+5, +4), (+6, -1), (-4, -5)],
+    [(+9, -3), (-6, -4), (+6, +9), (-2, -2)],
+    [(-1, -8), (+5, +8), (+6, -4), (+2, +3)],
+    [(+4, -5), (+3, +9), (-4, +4), (+5, +2)]
 ]
 
 recommendations = [
-    # ( V limit, E limit, [Genres, ...] )
+    # ( V limit, E limit, [Genres, ...], [Emotions, ...] )
+    # ['sadness', 'fear', 'optimism', 'anger', 'neutral', 'worry', 'love', 'fun', 'boredom', 'embarrassment']
 
     # Критическое истощение
     (lambda v: True, lambda e: e <= -6,
-     ["documentary", "history", "music"]),
+     ["documentary", "history", "music"],
+     ["neutral", "boredom"]),
 
     # Романтическое созерцание
     (lambda v: v > 0, lambda e: -6 < e < -2,
-     ["melodrama", "drama", "biography"]),
+     ["melodrama", "drama", "biography"],
+     ["sadness", "anger", "fear", "embarrassment"]),
 
     # Меланхолия / Грусть
     (lambda v: v <= 0, lambda e: -6 < e <= 0,
-     ["drama", "sci_fi"]),
+     ["drama", "sci_fi"],
+     ["optimism", "fun", "embarrassment"]),
 
     # Спокойствие / Уют
     (lambda v: v > 0, lambda e: -2 <= e <= 3,
-     ["comedy", "family", "cartoon"]),
+     ["comedy", "family", "cartoon"],
+     ["neutral", "love"]),
 
     # Тревога / Поиск контроля
     (lambda v: v <= 0, lambda e: 0 < e <= 6,
-     ["detective", "thriller", "criminal"]),
+     ["detective", "thriller", "criminal"],
+     ["love", "sadness"]),
 
     # Драйв / Азарт
     (lambda v: v > 0, lambda e: e > 3,
-     ["action", "adventures", "comedy", "fantasy"]),
+     ["action", "adventures", "comedy", "fantasy"],
+     ["worry", "fear"]),
 
     # Катарсис / Выплеск
     (lambda v: v <= 0, lambda e: e > 6,
-     ["horror", "thriller", "drama"]),
+     ["horror", "thriller", "drama"],
+     ["sadness", "neutral", "boredom"]),
 ]
 
 def get_cords(answers: list[int]):
@@ -50,16 +58,22 @@ def get_cords(answers: list[int]):
 
     return valency / total, energy / total
 
-async def get_emotion_genres(answers: list[int]) -> list[str]:
-    final_set = set()
+async def get_emotion_genres(answers: list[int]) -> dict[str, list[str]]:
+    final_genres = set()
+    final_emotions = set()
     v, e = get_cords(answers)
 
-    for v_check, e_check, genres in recommendations:
+    for v_check, e_check, genres, emotions in recommendations:
         if v_check(v) and e_check(e):
             for genre in genres:
-                final_set.add(f"genre_{genre}")
+                final_genres.add(f"genre_{genre}")
+            for emotion in emotions:
+                final_emotions.add(emotion)
 
-    return list(final_set)
+    return {
+        "genres": list(final_genres),
+        "emotions": list(final_emotions)
+    }
 
 
 async def test():

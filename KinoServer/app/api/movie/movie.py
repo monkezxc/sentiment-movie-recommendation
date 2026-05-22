@@ -337,7 +337,7 @@ async def get_movies_by_emotion_endpoint(
 
 ######
 
-@router.post("/genres-by-survey", response_model=list[str])
+@router.post("/genres-by-survey", response_model=dict[str, list[str]])
 async def get_genres_by_survey(request: Request,
                                q1: int, q2: int, q3: int, q4: int, q5: int, q6: int):
 
