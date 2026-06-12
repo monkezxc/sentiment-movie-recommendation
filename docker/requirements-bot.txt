@@ -1,0 +1,4 @@
+python-dotenv
+aiogram
+asyncpg
+aiofiles

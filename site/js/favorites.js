@@ -1,14 +1,24 @@
 import { displayTopEmotionsText } from './ui_emotions.js';
 
 // Контроллер "понравившихся фильмов": загрузка/рендер списка и клик по элементу.
-export function createFavoritesController({ api, userId, onOpenMovie }) {
+export function createFavoritesController({ api, userId, writeQueue, onOpenMovie }) {
+  // Закрытие бокового меню "лайкнутые" — снимаем галку чекбокса (выезжающее меню
+  // на CSS-only через :checked) и диспатчим change, чтобы любые внешние подписки
+  // тоже отреагировали.
+  function closeFavoritesMenu() {
+    const toggle = document.getElementById('favorites-menu-toggle');
+    if (!toggle || !toggle.checked) return;
+    toggle.checked = false;
+    toggle.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
   async function loadAndDisplayLikedMovies() {
     const likedIds = await api.getLikedMovies({ userId });
     const movies = await api.getMoviesByIds({ movieIds: likedIds });
-    displayLikedMovies(movies);
+    await displayLikedMovies(movies);
   }
 
-  function displayLikedMovies(movies) {
+  async function displayLikedMovies(movies) {
     const favoritesList = document.querySelector('.favorites-list');
     if (!favoritesList) return;
 
@@ -22,7 +32,8 @@ export function createFavoritesController({ api, userId, onOpenMovie }) {
       return;
     }
 
-    movies.forEach((movie) => {
+    // Собираем `listItem` сразу, а рейтинги эмоций догружаем одним батч-запросом ниже.
+    const itemsWithKeys = movies.map((movie) => {
       const listItem = document.createElement('li');
       listItem.className = 'favorites-list__item';
       listItem.dataset.movieId = movie.id;
@@ -38,24 +49,30 @@ export function createFavoritesController({ api, userId, onOpenMovie }) {
 
       favoritesList.appendChild(listItem);
 
-      if (movie.tmdb_id) {
-        loadEmotionRatingsForFavoritesItem(listItem, movie.tmdb_id);
-      }
-
       listItem.addEventListener('click', () => {
-        const toggle = document.getElementById('favorites-menu-toggle');
-        if (toggle) toggle.checked = false;
-
+        // Закрываем меню перед открытием карточки, чтобы у CSS-transition было
+        // время отъехать, а не "застыть" под карточкой.
+        closeFavoritesMenu();
         onOpenMovie(movie);
       });
-    });
-  }
 
-  async function loadEmotionRatingsForFavoritesItem(listItem, tmdbId) {
+      const emotionKey = movie.kinopoisk_id ?? movie.tmdb_id ?? movie.id;
+      return { listItem, emotionKey };
+    });
+
+    // Один запрос на все рейтинги вместо N (по одному на фильм).
+    const movieIds = itemsWithKeys
+      .map(({ emotionKey }) => emotionKey)
+      .filter((id) => id !== undefined && id !== null);
+
+    if (movieIds.length === 0) return;
+
     try {
-      const emotionRatings = await api.getAvgEmotionRatings({ tmdbId });
-      if (!emotionRatings) return;
-      displayTopEmotionsText(listItem, emotionRatings);
+      const ratingsByMovieId = await api.getAvgEmotionRatingsByIds({ movieIds });
+      itemsWithKeys.forEach(({ listItem, emotionKey }) => {
+        const ratings = ratingsByMovieId?.[emotionKey];
+        if (ratings) displayTopEmotionsText(listItem, ratings);
+      });
     } catch (e) {
       console.error('Ошибка загрузки рейтингов эмоций (лайкнутые):', e);
     }
@@ -66,26 +83,31 @@ export function createFavoritesController({ api, userId, onOpenMovie }) {
     const clearDislikesBtn = document.querySelector('.favorites-clear-dislikes-btn');
 
     if (clearLikesBtn) {
-      clearLikesBtn.addEventListener('click', async () => {
-        try {
-          await api.clearLikes({ userId });
-          await loadAndDisplayLikedMovies();
-        } catch (e) {
-          console.error('Ошибка при сбросе лайков:', e);
-          alert('Не удалось сбросить лайки. Попробуйте еще раз.');
-        }
+      clearLikesBtn.addEventListener('click', () => {
+        displayLikedMovies([]);
+        writeQueue.enqueue(
+          'favorite.clearLikes',
+          () => api.clearLikes({ userId }),
+          {
+            onSuccess: () => {
+              void loadAndDisplayLikedMovies();
+            },
+          },
+        );
       });
     }
 
     if (clearDislikesBtn) {
-      clearDislikesBtn.addEventListener('click', async () => {
-        try {
-          await api.clearDislikes({ userId });
-          await loadAndDisplayLikedMovies();
-        } catch (e) {
-          console.error('Ошибка при сбросе дизлайков:', e);
-          alert('Не удалось сбросить дизлайки. Попробуйте еще раз.');
-        }
+      clearDislikesBtn.addEventListener('click', () => {
+        writeQueue.enqueue(
+          'favorite.clearDislikes',
+          () => api.clearDislikes({ userId }),
+          {
+            onSuccess: () => {
+              void loadAndDisplayLikedMovies();
+            },
+          },
+        );
       });
     }
   }

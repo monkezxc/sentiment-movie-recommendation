@@ -1,0 +1,376 @@
+/* Планшеты */
+@media (max-width: 1024px) {
+    :root {
+        --content-width: 85%;
+        --content-side-gap: 7.5vw;
+        --searchbar-height: 68px;
+        --searchbar-font: 26px;
+        --card-height: 189px;
+        --page-padding: 12px;
+        --font-filter: 15px;
+        --font-movie-title: 18px;
+        --font-movie-description: 13px;
+        --font-rating: 18px;
+        --radius-rating: 20px 50px 20px 50px;
+    }
+
+    .preview_container {
+        padding: 12px;
+        gap: 14px;
+    }
+
+    .rating_container {
+        padding: 10px;
+    }
+
+    .rating_list {
+        gap: 4px;
+    }
+}
+/* Телефоны */
+@media (max-width: 768px) {
+    :root {
+        --content-width: 100%;
+        --content-side-gap: 0px;
+        --searchbar-height: 56px;
+        --searchbar-font: 18px;
+        --card-height: 153px;
+        --page-padding: 16px;
+        --font-filter: 14px;
+        --font-movie-title: 15px;
+        --font-movie-description: 11px;
+        --font-rating: 14px;
+        --font-status: 18px;
+        --radius-card: 18px;
+        --radius-card-inner: 10px;
+        --radius-rating: 18px 40px 18px 40px;
+        --dropdown-min-width: 200px;
+        --dropdown-searchable-min-width: 210px;
+        --dropdown-max-height: min(42dvh, 350px);
+        --dropdown-options-max-height: min(34dvh, 130px);
+        --font-dropdown: 13px;
+        --radius-survey: 18px;
+        --survey-width: 94vw;
+        --survey-height: auto;
+        --font-survey-progress: 12px;
+        --font-survey-category: 11px;
+        --font-survey-question: 17px;
+        --font-survey-option: 13px;
+        --font-survey-error: 12px;
+        --survey-nav-min-width: 96px;
+        --padding-survey-header: 12px 14px 6px;
+        --padding-survey-body: 4px 14px 10px;
+        --padding-survey-footer: 10px 14px 14px;
+    }
+
+    .search_row {
+        gap: 8px;
+    }
+
+    .view_mode_button {
+        padding: 8px 10px;
+        font-size: 12px;
+    }
+
+    .searchbar {
+        padding: 8px 0px 8px 20px;
+        border-radius: 28px;
+    }
+
+    .raised {
+        top: max(12px, env(safe-area-inset-top, 0px));
+    }
+
+    .filter_button {
+        padding: 8px 14px;
+        min-height: 40px;
+    }
+
+    .cards_wrapper {
+        margin-top: 12px;
+    }
+
+    .preview_container {
+        padding: 10px;
+        gap: 10px;
+    }
+
+    .rating_container {
+        padding: 8px;
+    }
+
+    .rating_list {
+        gap: 2px;
+        padding: 2px 4px;
+    }
+
+    .cards_status {
+        padding: 0 var(--page-padding);
+    }
+
+    .filter_dropdown {
+        padding: 8px;
+        border-radius: 14px;
+    }
+
+    .filter_dropdown_search {
+        padding: 8px 10px;
+        border-radius: 10px;
+    }
+
+    .filter_dropdown_options {
+        gap: 5px;
+    }
+
+    .filter_dropdown_option {
+        padding: 8px 10px;
+        border-radius: 10px;
+    }
+
+    .survey_overlay {
+        padding: 10px;
+    }
+
+    .survey_dialog {
+        max-height: 78dvh;
+    }
+
+    .survey_close_btn {
+        width: 28px;
+        height: 28px;
+        font-size: 20px;
+    }
+
+    .survey_category {
+        margin-bottom: 6px;
+    }
+
+    .survey_question {
+        margin-bottom: 14px;
+    }
+
+    .survey_options {
+        gap: 8px;
+    }
+
+    .survey_option {
+        gap: 10px;
+        padding: 10px 12px;
+        border-radius: 12px;
+    }
+
+    .survey_option_index {
+        width: 22px;
+        height: 22px;
+        font-size: 12px;
+    }
+
+    .survey_option_text {
+        line-height: 1.35;
+    }
+
+    .survey_error {
+        margin-top: 10px;
+    }
+
+    .survey_footer {
+        gap: 8px;
+    }
+
+    .survey_nav_btn {
+        font-size: 13px;
+        padding: 7px 12px;
+    }
+}
+/* Маленькие телефоны */
+@media (max-width: 480px) {
+    :root {
+        --searchbar-height: 50px;
+        --searchbar-font: 14px;
+        --card-height: 108px;
+        --page-padding: 12px;
+        --font-filter: 11px;
+        --font-movie-title: 13px;
+        --font-movie-description: 10px;
+        --font-rating: 11px;
+        --radius-card: 14px;
+        --radius-card-inner: 8px;
+        --radius-rating: 14px 30px 14px 30px;
+        --gap-cards: 12px;
+        --dropdown-min-width: 172px;
+        --dropdown-searchable-min-width: 188px;
+        --dropdown-max-height: min(38dvh, 250px);
+        --dropdown-options-max-height: min(30dvh, 112px);
+        --font-dropdown: 12px;
+        --radius-survey: 14px;
+        --survey-width: 96vw;
+        --font-survey-progress: 11px;
+        --font-survey-category: 10px;
+        --font-survey-question: 15px;
+        --font-survey-option: 12px;
+        --font-survey-error: 11px;
+        --survey-nav-min-width: 84px;
+        --padding-survey-header: 10px 12px 4px;
+        --padding-survey-body: 2px 12px 8px;
+        --padding-survey-footer: 8px 12px 12px;
+        --blur-blob: 60px;
+    }
+
+    .view_mode_toggle {
+        flex-direction: column;
+        gap: 4px;
+        border-radius: 25%;
+    }
+
+    .view_mode_button {
+        width: 100%;
+        text-align: center;
+        padding: 3px;
+    }
+
+    .searchbar {
+        padding: 8px 0px 8px 16px;
+    }
+
+    .filters_container {
+        gap: 8px;
+    }
+
+    .filter_button {
+        padding: 3px 10px;
+    }
+
+    .preview_container {
+        padding: 8px;
+        gap: 8px;
+    }
+
+    .rating_container {
+        padding: 6px;
+    }
+
+    .blob {
+        width: 70vmax;
+        height: 70vmax;
+    }
+
+    .filter_dropdown {
+        padding: 6px;
+        border-radius: 12px;
+    }
+
+    .filter_dropdown_search {
+        padding: 7px 9px;
+        border-radius: 8px;
+    }
+
+    .filter_dropdown_options {
+        gap: 4px;
+    }
+
+    .filter_dropdown_option {
+        padding: 7px 9px;
+        border-radius: 8px;
+    }
+
+    .survey_overlay {
+        padding: 8px;
+    }
+
+    .survey_dialog {
+        max-height: 84dvh;
+    }
+
+    .survey_close_btn {
+        width: 26px;
+        height: 26px;
+        font-size: 18px;
+    }
+
+    .survey_category {
+        margin-bottom: 4px;
+    }
+
+    .survey_question {
+        margin-bottom: 10px;
+        line-height: 1.25;
+    }
+
+    .survey_options {
+        gap: 6px;
+    }
+
+    .survey_option {
+        gap: 8px;
+        padding: 8px 10px;
+        border-radius: 10px;
+    }
+
+    .survey_option_index {
+        width: 20px;
+        height: 20px;
+        font-size: 11px;
+    }
+
+    .survey_option_text {
+        line-height: 1.3;
+    }
+
+    .survey_error {
+        margin-top: 8px;
+    }
+
+    .survey_footer {
+        gap: 6px;
+    }
+
+    .survey_nav_btn {
+        font-size: 12px;
+        padding: 6px 10px;
+        min-height: 34px;
+    }
+}
+/* Ландшафт на телефонах */
+@media (max-height: 500px) and (orientation: landscape) {
+    :root {
+        --searchbar-height: 44px;
+        --searchbar-font: 16px;
+        --card-height: 108px;
+        --font-movie-title: 13px;
+        --font-movie-description: 10px;
+        --font-rating: 11px;
+        --survey-width: 92vw;
+        --font-survey-question: 14px;
+        --font-survey-option: 11px;
+        --dropdown-max-height: 300px;
+        --dropdown-options-max-height: min(38dvh, 100px);
+    }
+
+    .raised {
+        height: 100dvh;
+    }
+
+    .filters_scroll {
+        margin-top: 6px;
+    }
+
+    .movie_description {
+        -webkit-line-clamp: 2;
+    }
+
+    .survey_dialog {
+        max-height: 92dvh;
+    }
+
+    .survey_question {
+        margin-bottom: 8px;
+    }
+
+    .survey_option {
+        padding: 7px 9px;
+    }
+
+    .survey_footer {
+        padding: 8px 12px 10px;
+    }
+}

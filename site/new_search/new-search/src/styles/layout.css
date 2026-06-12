@@ -1,0 +1,92 @@
+.main_container {
+    background-image: url('/src/assets/search_bg.jpg');
+    width: 100%;
+    min-height: 100dvh;
+    height: 100dvh;
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center;
+    position: relative;
+    overflow: hidden;
+    z-index: var(--z-ambient);
+    display: flex;
+}
+.main_container::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--color-overlay);
+    backdrop-filter: blur(var(--blur-page));
+    z-index: var(--z-overlay);
+}
+.main_content {
+    position: absolute;
+    z-index: var(--z-main);
+    width: var(--content-width);
+    max-width: 100%;
+    padding: 0 var(--page-padding);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    transition: top var(--transition-layout), transform var(--transition-layout), width 0.3s ease;
+}
+.raised {
+    top: max(20px, env(safe-area-inset-top, 0px));
+    transform: translate(-50%, 0);
+    height: calc(100dvh - max(20px, env(safe-area-inset-top, 0px)));
+    justify-content: flex-start;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.search_row {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: var(--gap-search-row);
+}
+.search_row .searchbar {
+    flex: 1;
+    min-width: 0;
+}
+.filters_scroll {
+    position: relative;
+    z-index: var(--z-filters);
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
+    margin-bottom: -18px;
+    overflow: visible;
+}
+.filters_container {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    text-align: center;
+    padding-top: 10px;
+    scroll-padding-inline: calc(var(--content-side-gap) + var(--page-padding) + 18px);
+    padding-inline: calc(var(--page-padding) + env(safe-area-inset-right, 0px));
+    padding-left: calc(var(--content-side-gap) + var(--page-padding) + env(safe-area-inset-left, 0px));
+}
+.filters_container_overflow {
+    text-align: start;
+}
+.filters_container::-webkit-scrollbar {
+    display: none;
+}
+.filters_track {
+    display: inline-flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: var(--gap-filters);
+    padding: 18px;
+    vertical-align: top;
+    transform: translateY(-15px);
+}
+.filters_track > * {
+    flex-shrink: 0;
+}

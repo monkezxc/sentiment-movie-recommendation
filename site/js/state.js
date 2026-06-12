@@ -1,10 +1,21 @@
 // Единое состояние приложения (только данные/флаги).
+function createRecommendationSessionId() {
+  if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+    return window.crypto.randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
 export function createState() {
   return {
     movies: [],
     searchQuery: '',
     semanticQuery: '',
     emotionFilter: null,
+    photoEmotionFilter: null,
+    genreFilter: null,
+    surveyGenres: [],
+    surveyEmotions: [],
     currentIndex: 0,
     offset: 0,
     isLoading: false,
@@ -26,6 +37,14 @@ export function createState() {
 
     width: window.innerWidth,
     currentMovieId: null,
+
+    recommendationSessionId: createRecommendationSessionId(),
+    recommendationMode: true,
+    recommendationQuery: '',
+    recommendationMood: null,
+    recommendationShownIds: [],
+    recommendationLikedIds: [],
+    recommendationDislikedIds: [],
   };
 }
 

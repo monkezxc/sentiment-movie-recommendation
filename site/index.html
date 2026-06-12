@@ -7,14 +7,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Jura:wght@300..700&family=Nata+Sans:wght@100..900&family=Unbounded:wght@200..900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="./styles/variables.css">
-    <link rel="stylesheet" href="./styles/layout.css">
-    <link rel="stylesheet" href="./styles/ui.css">
-    <link rel="stylesheet" href="./styles/card.css">
-    <link rel="stylesheet" href="./styles/not_found.css">
-    <link rel="stylesheet" href="./styles/loader/loader.css">
+    <link rel="stylesheet" href="./new_search/new-search/src/styles/legacy/site-index.css">
 </head>
-<body>
+<body class="site-legacy">
 
     <script src="./env.js"></script>
 
@@ -116,44 +111,31 @@
     <template id="movie-card-template">
         <div class="card">
             <button type="button" class="close-card-button"></button>
-            <div class="overlay overlay_left"></div>
-            <div class="overlay overlay_right"></div>
-            
-            <section class="movie-info">
-                <h2 class="movie-title"></h2>
-                <ul class="emotions-rating">
-                    <li class="emotions-rating-item emotion1">
-                        <span class="emotion1-emoji">😮</span>
-                        <span class="emotion1-rating">N/A</span>
-                    </li>
-                    <li class="emotions-rating-item emotion2">
-                        <span class="emotion2-emoji">❤️</span>
-                        <span class="emotion2-rating">N/A</span>
-                    </li>
-                    <li class="emotions-rating-item emotion3">
-                        <span class="emotion3-emoji">😨</span>
-                        <span class="emotion3-rating">N/A</span>
-                    </li>
-                </ul>
-            </section>
-            
-            <section class='movie-description-wrapper'>
-                <p class="movie-description"></p>
-            </section>
-            
-            <ul class="movie-button-list">
-                <li class="movie-button-list-item">
-                    <button type="button" class='button button-container__yes-button glass-button' data-action="no">no</button>
-                </li>
-                <li class="movie-button-list-item center-item">
-                    <button type="button" class='button button-container__more-button glass-button' data-action="more">more</button>
-                </li>
-                <li class="movie-button-list-item">
-                    <button type="button" class='button button-container__no-button glass-button' data-action="yes">yes</button>
-                </li>
-            </ul>
 
-            <section class="additional_info">
+            <div class="card-face">
+                <section class="card-bottom">
+                    <h2 class="movie-title"></h2>
+                    <div class="card-meta">
+                        <ul class="emotions-rating card-emotions" aria-label="Топ-3 эмоции">
+                            <li class="emotions-rating-item">
+                                <span class="emotion1-emoji"></span>
+                                <span class="emotion1-rating">—</span>
+                            </li>
+                            <li class="emotions-rating-item">
+                                <span class="emotion2-emoji"></span>
+                                <span class="emotion2-rating">—</span>
+                            </li>
+                            <li class="emotions-rating-item">
+                                <span class="emotion3-emoji"></span>
+                                <span class="emotion3-rating">—</span>
+                            </li>
+                        </ul>
+                        <p class="card-meta__item movie-country"></p>
+                        <p class="card-meta__item movie-genres"></p>
+                    </div>
+                </section>
+
+                <section class="additional_info">
                 <div class="additional_info__top">
                     <h2 class="additional_info__title"></h2>
                     <div class="additional_info__director"></div>
@@ -224,6 +206,19 @@
                     </ul>
                 </section>
             </section>
+            </div>
+
+            <ul class="movie-button-list">
+                <li class="movie-button-list-item">
+                    <button type="button" class='button button-container__yes-button glass-button' data-action="no">Не нравится</button>
+                </li>
+                <li class="movie-button-list-item center-item">
+                    <button type="button" class='button button-container__more-button glass-button' data-action="more">Узнать больше</button>
+                </li>
+                <li class="movie-button-list-item">
+                    <button type="button" class='button button-container__no-button glass-button' data-action="yes">Нравится</button>
+                </li>
+            </ul>
         </div>
     </template>
 

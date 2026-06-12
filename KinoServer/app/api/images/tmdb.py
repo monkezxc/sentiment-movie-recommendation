@@ -4,12 +4,12 @@ import time
 import hashlib
 from pathlib import Path
 from typing import Final
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 from urllib.request import Request as UrlRequest, urlopen
 from urllib.error import HTTPError, URLError
 
 from fastapi import APIRouter, HTTPException
-from starlette.responses import FileResponse
+from starlette.responses import FileResponse, Response
 from anyio import to_thread
 
 from app.config.config_reader import config
@@ -18,6 +18,11 @@ from app.config.config_reader import config
 router = APIRouter(prefix="/images", tags=["Images"])
 
 # Разрешённые размеры TMDB.
+ALLOWED_PROXY_HOSTS: Final[set[str]] = {
+    "kinopoiskapiunofficial.tech",
+    "image.tmdb.org",
+}
+
 ALLOWED_SIZES: Final[set[str]] = {
     "w92",
     "w154",
@@ -161,6 +166,43 @@ def _download_to_file(remote_url: str, dest_path: Path) -> None:
             tmp_path.unlink(missing_ok=True)
         except OSError:
             pass
+
+
+def _fetch_image_bytes(remote_url: str) -> tuple[bytes, str]:
+    req = UrlRequest(
+        remote_url,
+        headers={
+            "User-Agent": "KinoServer/1.0 (image proxy)",
+        },
+    )
+    try:
+        with urlopen(req, timeout=20) as resp:
+            content_type = resp.headers.get("Content-Type") or "image/jpeg"
+            return resp.read(), content_type
+    except HTTPError as e:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Источник вернул ошибку: {getattr(e, 'code', 'unknown')}",
+        ) from e
+    except URLError as e:
+        raise HTTPException(status_code=502, detail="Не удалось скачать изображение") from e
+
+
+@router.get("/proxy")
+async def proxy_external_image(url: str):
+    """Same-origin прокси для rgbaster и других клиентских запросов к постерам."""
+    parsed = urlparse((url or "").strip())
+    if parsed.scheme not in {"http", "https"}:
+        raise HTTPException(status_code=400, detail="Некорректный URL")
+    if parsed.netloc not in ALLOWED_PROXY_HOSTS:
+        raise HTTPException(status_code=400, detail="Хост изображения не разрешён")
+
+    data, content_type = await to_thread.run_sync(_fetch_image_bytes, url)
+    return Response(
+        content=data,
+        media_type=content_type.split(";")[0].strip() or "image/jpeg",
+        headers={"Cache-Control": "public, max-age=86400"},
+    )
 
 
 @router.get("/tmdb/{size}/{file_path:path}", name="tmdb_image")

@@ -3,7 +3,12 @@ import json
 from typing import Any, Optional
 from auto_tags import create_tags
 
-BASE_PATH = "_film_data"
+# Каталог с kp_films / kp_staff / kp_reviews — по умолчанию рядом с корнем репозитория (не зависит от cwd).
+_PARSER_DIR = os.path.dirname(os.path.abspath(__file__))
+_REPO_ROOT = os.path.normpath(os.path.join(_PARSER_DIR, ".."))
+BASE_PATH = os.path.normpath(
+    os.environ.get("FILM_DATA_DIR", os.path.join(_REPO_ROOT, "_film_data"))
+)
 
 
 def load_json(path: str):
@@ -29,6 +34,27 @@ def get_offline_reviews(kp_id: int):
             reviews.append(text)
 
     return total_revs, reviews
+
+
+def ensure_reviews_attached(parsed_data: dict[str, Any]) -> None:
+    """
+    Если в записи movie_data уже есть непустой список reviews (например из compiled или _get_film),
+    ничего не делаем. Иначе подгружаем из kp_reviews/reviews_{kinopoisk_id}.json (старый compiled).
+    """
+    kid = parsed_data.get("kinopoisk_id")
+    if kid is None:
+        return
+    existing = parsed_data.get("reviews")
+    if isinstance(existing, list) and len(existing) > 0:
+        tr = parsed_data.get("total_reviews")
+        if tr is None or int(tr) == 0:
+            parsed_data["total_reviews"] = len(existing)
+        return
+    total_rev, rev_list = get_offline_reviews(int(kid))
+    parsed_data["reviews"] = rev_list
+    parsed_data["total_reviews"] = int(
+        total_rev or parsed_data.get("total_reviews") or 0
+    )
 
 
 def sort_film_data(film_data: list):
@@ -120,7 +146,7 @@ class OfflineFilmData:
         data = load_json(os.path.join(BASE_PATH, "kp_films", f"entity_{kp_id}.json"))
         data_staff = load_json(os.path.join(BASE_PATH, "kp_staff", f"staff_{kp_id}.json"))
 
-        if data.get("type") != "FILM":
+        if not data or data.get("type") != "FILM":
             # print(film_title, "- не фильм!")
             return None
 
@@ -135,7 +161,7 @@ class OfflineFilmData:
             "genre": self._get_m_names(data, "genres", "genre", capitalize=True),
 
             "director": self._get_m_personnel(data_staff, "DIRECTOR", 3),
-            "screenwriter": self._get_m_personnel(data_staff, "WRITER", 3),
+            "writers": self._get_m_personnel(data_staff, "WRITER", 3),
             "actors": self._get_m_personnel(data_staff, "ACTOR", 10),
 
             "description": data.get("description") or data.get("shortDescription") or self.str_na,
@@ -145,8 +171,11 @@ class OfflineFilmData:
             "rating": self._get_m_average_rating(data),
 
             "tags": create_tags(data),
-            "total_reviews": get_offline_reviews(kp_id)[0],
         }
+        # Отзывы из kp_reviews/reviews_{id}.json — сразу вместе с карточкой фильма.
+        total_rev, reviews_list = get_offline_reviews(kp_id)
+        result["total_reviews"] = int(total_rev or 0)
+        result["reviews"] = reviews_list
 
         return result
 

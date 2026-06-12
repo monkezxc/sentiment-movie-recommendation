@@ -44,19 +44,22 @@ class EmotionClassifier:
             'worry',
             'love',
             'fun',
-            'boredom']
+            'boredom',
+            'embarrassment']
+        
+        # Маппинг оригинальных эмоций в целевые
         
         self.emotion_mapping = {
             'sadness': ['sadness'],
-            'fear': ['fear', 'embarrassment', 'remorse'],
+            'fear': ['fear',  'remorse'],
             'optimism': ['optimism', 'approval', 'pride', 'admiration'],
-            'anger': ['anger', 'disapproval', 'disgust'],
-            'neutral': ['neutral', 'realization', 'surprise', 'confusion'],
+            'anger': ['anger', 'disapproval'],
+            'neutral': ['neutral'],
             'love': ['love', 'caring', 'desire'],
             'fun': ['amusement', 'excitement', 'joy'],
             'boredom': ['disappointment','annoyance'],
-            'worry': ['nervousness']}
-
+            'worry':['nervousness', 'realization', 'surprise', 'confusion'],
+            'embarrassment':['embarrassment','disgust']}
     
     def is_russian(self, text: str) -> bool:
         """Проверяет, есть ли в тексте русские буквы."""

@@ -12,9 +12,19 @@ export const EMOTION_META = {
   boredom: { label: 'Скука', emoji: '😴' },
 };
 
+export const EXCLUDED_OUTPUT_EMOTIONS = new Set(['neutral']);
+
+export function isOutputEmotion(emotion) {
+  return Boolean(emotion) && !EXCLUDED_OUTPUT_EMOTIONS.has(emotion);
+}
+
 export function getTopEmotions(emotionRatings, topN = 3) {
   const entries = Object.entries(emotionRatings || {})
-    .filter(([, rating]) => typeof rating === 'number' && Number.isFinite(rating))
+    .filter(([key, rating]) => (
+      !EXCLUDED_OUTPUT_EMOTIONS.has(key)
+      && typeof rating === 'number'
+      && Number.isFinite(rating)
+    ))
     .sort(([, a], [, b]) => b - a)
     .slice(0, topN);
 
@@ -34,6 +44,7 @@ export function getTopEmotions(emotionRatings, topN = 3) {
 
 export function displayEmotionRatings(card, emotionRatings) {
   const sortedEmotions = Object.entries(emotionRatings || {})
+    .filter(([key]) => !EXCLUDED_OUTPUT_EMOTIONS.has(key))
     .sort(([, a], [, b]) => b - a)
     .slice(0, 3);
 
@@ -51,17 +62,21 @@ export function displayEmotionRatings(card, emotionRatings) {
 
   for (let i = 0; i < 3; i++) {
     const [emotionName, rating] = sortedEmotions[i] || [null, 0];
-    if (emotionName && rating > 0) {
-      const emojiElement = card.querySelector(`.emotion${i + 1}-emoji`);
-      const ratingElement = card.querySelector(`.emotion${i + 1}-rating`);
+    const emojiElement = card.querySelector(`.emotion${i + 1}-emoji`);
+    const ratingElement = card.querySelector(`.emotion${i + 1}-rating`);
 
+    if (emotionName && rating > 0) {
       if (emojiElement) {
         emojiElement.textContent = emotionEmojis[emotionName] || '🤔';
       }
       if (ratingElement) {
         ratingElement.textContent = Number(rating).toFixed(1);
       }
+      continue;
     }
+
+    if (emojiElement) emojiElement.textContent = '';
+    if (ratingElement) ratingElement.textContent = '—';
   }
 }
 

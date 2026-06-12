@@ -1,0 +1,49 @@
+.button {
+    width: 100%;
+    height: 100%;
+    border-radius: var(--stack-radius-btn);
+    font-family: inherit;
+    cursor: pointer;
+}
+.pseudo-checkbox {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    border-radius: 25%;
+}
+.close-card-button {
+    position: absolute;
+    display: none;
+    z-index: var(--stack-z-close-btn);
+    top: 15px;
+    right: 15px;
+    width: clamp(30px, 3vw, 60px);
+    aspect-ratio: 1/1;
+    background-image: var(--stack-icon-cross);
+    background-size: 80%;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    border-radius: 3px;
+}
+.emotions-filter {
+    display: flex;
+    height: 35%;
+    min-width: 130px;
+    border-radius: var(--stack-radius-filter);
+    flex-grow: 0.3;
+    color: inherit;
+}
+.text-search {
+    height: 80%;
+    max-width: 45%;
+    display: flex;
+    flex-grow: 0.2;
+    resize: none;
+    border-radius: var(--stack-radius-input);
+    color: inherit;
+    padding: 5px;
+    font-size: 16px;
+}

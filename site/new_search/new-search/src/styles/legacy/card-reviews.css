@@ -1,0 +1,219 @@
+.reviews-section {
+    box-sizing: border-box;
+    width: calc(100% + 2 * var(--stack-additional-side-padding, 25px));
+    margin-left: calc(-1 * var(--stack-additional-side-padding, 25px));
+    margin-right: calc(-1 * var(--stack-additional-side-padding, 25px));
+    margin-top: clamp(16px, 2.5vw, 24px);
+    padding: clamp(16px, 2.5vw, 24px) var(--stack-additional-side-padding, 25px) clamp(20px, 4vw, 30px);
+    background: transparent;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    position: relative;
+}
+.reviews-section__title {
+    font-size: clamp(0.9rem, 0.7rem + 1vw, 1.1rem);
+    font-weight: 700;
+    margin: 0 0 clamp(12px, 2vw, 18px);
+    color: var(--stack-text-primary);
+}
+.reviews-section__input-wrapper {
+    margin-bottom: clamp(12px, 2vw, 18px);
+}
+.reviews-section__input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: var(--stack-radius-btn);
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(10px);
+    color: var(--stack-text-primary);
+    font-size: clamp(0.75rem, 0.5rem + 1.25vw, 1rem);
+    font-family: inherit;
+    transition: border-color 0.3s ease, background-color 0.3s ease;
+    box-sizing: border-box;
+    resize: vertical;
+    min-height: 80px;
+}
+.reviews-section__input::placeholder {
+    color: rgba(240, 248, 255, 0.55);
+}
+.reviews-section__input:focus {
+    outline: none;
+    border-color: rgba(255, 255, 255, 0.35);
+    background: rgba(255, 255, 255, 0.12);
+}
+.reviews-section__emotions-wrapper {
+    margin-top: clamp(10px, 1.5vw, 15px);
+}
+.emotion-input-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+.emotion-input-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+.emotion-select,
+.rating-select {
+    padding: 8px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(10px);
+    color: var(--stack-text-primary);
+    font-size: clamp(0.75rem, 0.5rem + 1vw, 0.9rem);
+    font-family: inherit;
+    transition: border-color 0.3s ease;
+    min-width: 120px;
+}
+.emotion-select:focus,
+.rating-select:focus {
+    outline: none;
+    border-color: rgba(255, 255, 255, 0.35);
+}
+.emotion-remove-btn {
+    width: 30px;
+    height: 30px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(10px);
+    color: var(--stack-text-primary);
+    font-size: 1.2rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.emotion-remove-btn:hover:not(:disabled) {
+    background: rgba(255, 80, 80, 0.35);
+    border-color: rgba(255, 120, 120, 0.8);
+}
+.emotion-remove-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+.emotion-add-btn {
+    padding: 8px 16px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    color: var(--stack-text-primary);
+    font-size: clamp(0.75rem, 0.5rem + 1vw, 0.9rem);
+    font-family: inherit;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+.emotion-add-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.16);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+.emotion-add-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+.reviews-submit-btn {
+    width: 100%;
+    padding: 12px 20px;
+    border: none;
+    border-radius: var(--stack-radius-btn);
+    background-color: var(--color-glass);
+    backdrop-filter: blur(var(--blur-glass));
+    color: var(--stack-text-primary);
+    font-size: clamp(0.8rem, 0.55rem + 1.1vw, 1rem);
+    font-family: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
+    margin-top: clamp(12px, 2vw, 18px);
+    margin-bottom: clamp(12px, 2vw, 18px);
+}
+.reviews-submit-btn:hover {
+    background-color: var(--color-glass-hover);
+}
+.reviews-section__list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.reviews-section__item {
+    backdrop-filter: blur(10px);
+    border-radius: var(--stack-radius-btn);
+    padding: clamp(14px, 2.5vw, 20px);
+    margin-bottom: clamp(10px, 1.5vw, 15px);
+    background-color: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.reviews-section__item:last-child {
+    margin-bottom: 0;
+}
+.review-user-info {
+    margin-bottom: clamp(8px, 1.5vw, 12px);
+}
+.review-username {
+    font-weight: 700;
+    font-size: clamp(0.875rem, 0.625rem + 1.25vw, 1.125rem);
+    color: var(--stack-text-primary);
+}
+.review-emotions {
+    display: flex;
+    gap: 12px;
+    margin-bottom: clamp(8px, 1.5vw, 12px);
+    flex-wrap: wrap;
+}
+.review-emotion {
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: clamp(0.75rem, 0.5rem + 1vw, 0.9rem);
+    font-weight: 500;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--stack-text-primary);
+}
+.review-text-container {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    line-height: 1.4;
+    font-weight: 400;
+    color: var(--stack-text-primary);
+}
+.review-text {
+    line-height: 1.5;
+    margin: 0;
+    font-size: clamp(0.75rem, 0.5rem + 1.25vw, 1rem);
+    transition: max-height 0.3s ease;
+    overflow: hidden;
+    color: rgba(240, 248, 255, 0.92);
+}
+.review-text.collapsed {
+    max-height: 10em;
+    display: -webkit-box;
+    -webkit-line-clamp: 10;
+    line-clamp: 10;
+    -webkit-box-orient: vertical;
+}
+.review-text.expanded {
+    max-height: none;
+}
+.review-toggle-btn {
+    background: none;
+    border: none;
+    color: rgba(240, 248, 255, 0.65);
+    font-size: clamp(0.7rem, 0.45rem + 1vw, 0.85rem);
+    font-family: inherit;
+    cursor: pointer;
+    padding: 2px 0;
+    margin-top: 8px;
+    transition: color 0.3s ease;
+    align-self: flex-end;
+    text-align: right;
+}
+.review-toggle-btn:hover {
+    color: var(--stack-text-primary);
+}

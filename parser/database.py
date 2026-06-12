@@ -8,6 +8,12 @@ import requests
 import psycopg2
 from psycopg2 import sql
 from psycopg2.extras import Json
+# pgvector.psycopg2 регистрирует тип `vector` на соединении: после этого
+# можно передавать list[float] / numpy.ndarray в %s, а в SELECT возвращаются
+# питоновские списки. Без этого pgvector работал бы только через ::vector в SQL.
+from pgvector.psycopg2 import register_vector
+
+from movie_data import normalize_movie_data
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
@@ -77,23 +83,33 @@ class Database:
             db_url = _get_database_url()
             if db_url:
                 self.conn = psycopg2.connect(db_url)
-                return
+            else:
+                # Fallback для старых переменных.
+                self.conn = psycopg2.connect(
+                    host=os.getenv("DB_HOST", "localhost"),
+                    port=os.getenv("DB_PORT", "5432"),
+                    database=os.getenv("DB_NAME"),
+                    user=os.getenv("DB_USER"),
+                    password=os.getenv("DB_PASSWORD"),
+                )
 
-            # Fallback для старых переменных.
-            self.conn = psycopg2.connect(
-                host=os.getenv("DB_HOST", "localhost"),
-                port=os.getenv("DB_PORT", "5432"),
-                database=os.getenv("DB_NAME"),
-                user=os.getenv("DB_USER"),
-                password=os.getenv("DB_PASSWORD"),
-            )
-        except Exception as e:
+            # Расширение vector должно быть создано до register_vector. На свежей
+            # базе KinoServer.init_all_databases делает CREATE EXTENSION на старте,
+            # но парсер часто запускается изолированно, поэтому подстраховываемся.
+            with self.conn.cursor() as cursor:
+                cursor.execute("CREATE EXTENSION IF NOT EXISTS vector")
+                self.conn.commit()
+            register_vector(self.conn)
+        except Exception:
             raise
 
     def create_table(self):
         """Создание таблицы фильмов если её нет"""
         try:
             with self.conn.cursor() as cursor:
+                # embedding теперь хранится как pgvector.vector(1024). Это
+                # компактнее JSONB (~4 байта/компонент) и поддерживает индексы
+                # HNSW/IVFFlat + операторы <=> / <-> / <#>.
                 cursor.execute("""
                     CREATE TABLE IF NOT EXISTS movies (
                         id SERIAL PRIMARY KEY,
@@ -102,7 +118,7 @@ class Database:
                         duration INTEGER,
                         genre TEXT,
                         director TEXT,
-                        screenwriter TEXT,
+                        writers TEXT,
                         actors TEXT,
                         description TEXT,
                         horizontal_poster_url TEXT,
@@ -110,10 +126,12 @@ class Database:
                         country TEXT,
                         rating REAL,
                         tmdb_id INTEGER,
-                        kinopoisk_id INTEGER UNIQUE,
+                        kinopoisk_id INTEGER NOT NULL UNIQUE,
+                        title_foreign BOOLEAN NOT NULL DEFAULT FALSE,
+                        tags JSONB NOT NULL DEFAULT '[]'::jsonb,
+                        total_reviews INTEGER NOT NULL DEFAULT 0,
                         reviews JSONB,
-                        embedding JSONB,
-                        tags JSONB
+                        embedding vector(1024)
                     )
                 """)
                 self.conn.commit()
@@ -151,11 +169,13 @@ class Database:
             return False
 
     def insert_movie(self, movie_data):
-        """Добавление фильма в базу данных"""
+        """Добавление фильма: строго структура после normalize_movie_data()."""
         try:
+            md = normalize_movie_data(movie_data)
             with self.conn.cursor() as cursor:
-                reviews = self._normalize_reviews(movie_data.get("reviews"))
-                reviews_emotions = movie_data.get("reviews_emotions") or []
+                reviews = self._normalize_reviews(md.get("reviews"))
+                reviews_emotions = md.get("reviews_emotions") or []
+                kp = md["kinopoisk_id"]
 
                 # Имя колонки нельзя передать через %s — используем whitelist.
                 emotion_to_column = {
@@ -189,7 +209,7 @@ class Database:
 
                         cursor.execute(
                             insert_review_sql,
-                            (movie_data["kinopoisk_id"], review_text, emotion_rating),
+                            (kp, review_text, emotion_rating),
                         )
                 else:
                     # Fallback: старое поведение — считаем эмоции прямо здесь.
@@ -205,38 +225,45 @@ class Database:
 
                         cursor.execute(
                             insert_review_sql,
-                            (movie_data["kinopoisk_id"], review, emotion_rating),
+                            (kp, review, emotion_rating),
                         )
 
-                embedding = self._normalize_embedding(movie_data.get("embedding"))
+                embedding = self._normalize_embedding(md.get("embedding"))
 
                 reviews_value = Json(reviews)
-                embedding_value = Json(embedding) if embedding is not None else None
-                tags_value = Json(movie_data.get("tags", []))
+                # register_vector() уже подключён в connect(): list[float] и
+                # numpy.ndarray автоматически адаптируются в тип vector.
+                embedding_value = embedding
+                tags_value = Json(md.get("tags") or [])
 
+                tmdb = md.get("tmdb_id")
                 cursor.execute("""
                     INSERT INTO movies (
-                        title, release_year, duration, genre, director, screenwriter,
+                        title, release_year, duration, genre, director, writers,
                         actors, description, horizontal_poster_url, vertical_poster_url,
-                        country, rating, kinopoisk_id, reviews, embedding, tags
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        country, rating, tmdb_id, kinopoisk_id, title_foreign, tags,
+                        total_reviews, reviews, embedding
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """, (
-                    movie_data['title'],
-                    movie_data['release_year'],
-                    movie_data['duration'],
-                    movie_data['genre'],
-                    movie_data['director'],
-                    movie_data['screenwriter'],
-                    movie_data['actors'],
-                    movie_data['description'],
-                    movie_data['horizontal_poster_url'],
-                    movie_data['vertical_poster_url'],
-                    movie_data['country'],
-                    round(movie_data['rating'], 1),
-                    movie_data['kinopoisk_id'],
+                    md["title"],
+                    md["release_year"],
+                    md["duration"],
+                    md["genre"],
+                    md["director"],
+                    md["writers"],
+                    md["actors"],
+                    md["description"],
+                    md["horizontal_poster_url"],
+                    md["vertical_poster_url"],
+                    md["country"],
+                    round(float(md["rating"]), 1),
+                    tmdb,
+                    kp,
+                    md["title_foreign"],
+                    tags_value,
+                    md["total_reviews"],
                     reviews_value,
                     embedding_value,
-                    tags_value
                 ))
 
                 self.conn.commit()

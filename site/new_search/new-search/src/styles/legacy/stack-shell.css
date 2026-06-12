@@ -1,0 +1,49 @@
+.legacy_stack_shell {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    min-height: 420px;
+    margin-bottom: 100px;
+}
+.legacy_stack_shell .cards-wrapper {
+    width: 100%;
+    height: 100%;
+    min-height: 420px;
+}
+.legacy_stack_shell .card {
+    width: var(--stack-card-width);
+    height: var(--stack-card-height);
+    left: var(--stack-card-left);
+    top: var(--stack-card-top);
+    max-height: 70vh;
+}
+.legacy_stack_shell .card.is-open {
+    width: var(--stack-open-card-width);
+    left: var(--stack-open-card-left);
+    top: var(--stack-open-card-top);
+    max-height: none;
+    height: var(--stack-open-card-height);
+    z-index: var(--stack-z-open-card);
+}
+/* Портал вне main_content — fixed от viewport */
+.card_open_portal,
+.list_movie_detail_host {
+    position: fixed;
+    inset: 0;
+    z-index: var(--stack-z-detail);
+    pointer-events: none;
+}
+.card_open_portal .card,
+.list_movie_detail_host .card {
+    pointer-events: auto;
+}
+.card_open_portal .card.is-open,
+.list_movie_detail_host .card.is-open {
+    position: fixed;
+    width: var(--stack-open-card-width);
+    left: var(--stack-open-card-left);
+    top: var(--stack-open-card-top);
+    max-height: none;
+    height: var(--stack-open-card-height);
+    z-index: var(--stack-z-open-card);
+}

@@ -1,0 +1,84 @@
+.additional_info {
+    box-sizing: border-box;
+    width: 100%;
+    height: max(200px, fit-content);
+    position: absolute;
+    top: 90%;
+    opacity: 0;
+    transition: opacity var(--stack-transition-card);
+    display: flex;
+    flex-direction: column;
+    font-size: 18px;
+    --stack-additional-side-padding: 25px;
+    padding: var(--stack-additional-side-padding);
+    z-index: 20;
+    background-color: rgba(27, 27, 27, 0.733);
+    border-top-right-radius: 25px;
+    border-top-left-radius: 25px;
+    backdrop-filter: blur(50px);
+}
+.additional_info__emotions {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.additional_info__item {
+    margin-top: clamp(12px, 2vw, 18px);
+    width: 100%;
+    font-size: clamp(0.75rem, 0.5rem + 1.25vw, 1rem);
+}
+.additional_info__item:first-child {
+    margin-top: 0;
+}
+.additional_info__title {
+    font-size: clamp(1.25rem, 0.75rem + 2.5vw, 2rem);
+    font-weight: 700;
+    margin-bottom: clamp(8px, 1.5vw, 15px);
+}
+.movie-year {
+    display: inline;
+    font-size: clamp(0.6rem, 0.4rem + 1vw, 0.8rem);
+    font-weight: 400;
+    margin-left: clamp(5px, 1vw, 10px);
+}
+.additional_info__director {
+    font-size: clamp(0.875rem, 0.625rem + 1.25vw, 1.125rem);
+    font-weight: 700;
+    margin-bottom: clamp(8px, 1.5vw, 12px);
+}
+.additional_info__director::before {
+    content: 'Режиссёр: ';
+    font-size: clamp(0.75rem, 0.5rem + 1.25vw, 0.9rem);
+    font-weight: 400;
+    margin-right: clamp(5px, 1vw, 8px);
+}
+.additional_info__description {
+    padding-top: clamp(10px, 2vw, 15px);
+    line-height: 1.4;
+    margin-bottom: clamp(8px, 1.5vw, 12px);
+}
+.additional_info__cast {
+    margin-bottom: clamp(8px, 1.5vw, 12px);
+}
+.additional_info__cast::before {
+    content: 'Актеры: ';
+    font-weight: 700;
+    font-size: clamp(0.9rem, 0.7rem + 1vw, 1.1rem);
+}
+.additional_info__genres {
+    margin-bottom: clamp(8px, 1.5vw, 12px);
+}
+.additional_info__genres::before {
+    content: 'Жанр: ';
+    font-weight: 700;
+    font-size: clamp(0.9rem, 0.7rem + 1vw, 1.1rem);
+}
+.additional_info__rating {
+    margin-bottom: clamp(8px, 1.5vw, 12px);
+}
+.additional_info__rating::before {
+    content: 'Рейтинг: ';
+    font-weight: 700;
+    font-size: clamp(0.9rem, 0.7rem + 1vw, 1.1rem);
+}

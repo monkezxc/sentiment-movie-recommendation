@@ -1,0 +1,33 @@
+.searchbar {
+    height: var(--searchbar-height);
+    width: 100%;
+    border-radius: var(--radius-searchbar);
+    padding: 10px 0px 10px 35px;
+    font-size: var(--searchbar-font);
+    box-shadow: var(--shadow-searchbar);
+    transition: all 0.15s ease-in-out;
+    background-color: var(--color-glass);
+    backdrop-filter: blur(var(--blur-glass));
+    border: none;
+    color: var(--color-text);
+}
+.searchbar:focus {
+    box-shadow: var(--shadow-searchbar-focus);
+    border: none;
+    outline: none;
+    animation: shadow_wave 2s ease-in-out infinite;
+}
+.searchbar:focus-visible {
+    box-shadow: var(--shadow-searchbar-focus);
+    border: none;
+    outline: none;
+    animation: shadow_wave 10s ease-in-out infinite;
+}
+@keyframes shadow_wave {
+    0%, 100% { box-shadow: 0 0 30px var(--searchbarGlow); }
+    50% { box-shadow: var(--shadow-searchbar-focus); }
+}
+.searchbar::placeholder {
+    font-size: var(--searchbar-font);
+    color: var(--color-text-muted);
+}

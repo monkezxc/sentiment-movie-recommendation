@@ -1,0 +1,26 @@
+.overlay {
+    position: absolute;
+    width: 8%;
+    height: 120%;
+    background: linear-gradient(
+        90deg,
+        rgba(var(--stack-theme-rgb), 1),
+        rgba(var(--stack-theme-rgb), 0.4),
+        rgba(var(--stack-theme-rgb), 0)
+    );
+    opacity: 0;
+    transition: opacity var(--stack-transition-card);
+}
+.overlay_left {
+    right: 0;
+    background: linear-gradient(
+        -90deg,
+        rgba(var(--stack-theme-rgb), 1),
+        rgba(var(--stack-theme-rgb), 0.4),
+        rgba(var(--stack-theme-rgb), 0)
+    );
+}
+.overlay_left,
+.overlay_right {
+    display: none;
+}

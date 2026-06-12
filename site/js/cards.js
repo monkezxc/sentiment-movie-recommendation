@@ -16,14 +16,34 @@ export function createCardsController({
   userId,
   username,
   loaders,
+  writeQueue,
   onFavoritesUpdated,
 }) {
-  // Линейная интерполяция для анимаций.
-  const lerp = (start, end, t) => start * (1 - t) + end * t;
+  const MAX_CARD_TILT_DEG = 10;
 
-  // Очередь like/dislike: UI не ждёт запись в БД.
-  const voteQueue = [];
-  let isFlushingVotes = false;
+  function getOpenCardPortal() {
+    return document.querySelector('.card_open_portal')
+      || document.querySelector('.main_container')
+      || document.body;
+  }
+
+  function mountCardToOpenPortal(card) {
+    if (card.dataset.fromFavorites === 'true') return;
+    const portal = getOpenCardPortal();
+    if (card.parentElement === portal) return;
+    card._stackParent = card.parentElement;
+    portal.appendChild(card);
+  }
+
+  function restoreCardFromOpenPortal(card) {
+    if (card.dataset.fromFavorites === 'true') return;
+    const parent = card._stackParent;
+    if (parent && card.parentElement !== parent) {
+      parent.appendChild(card);
+    }
+    delete card._stackParent;
+  }
+
   let isFavoritesDirty = false;
   let favoritesRefreshTimerId = null;
 
@@ -48,58 +68,121 @@ export function createCardsController({
     }, 300);
   }
 
-  function scheduleVoteFlush() {
-    if (isFlushingVotes) return;
-
-    const run = () => {
-      flushVotes().catch((e) => console.error('Ошибка фоновой отправки лайков/дизлайков:', e));
-    };
-
-    // requestIdleCallback — если доступен, чтобы не мешать анимациям.
-    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-      window.requestIdleCallback(run, { timeout: 1500 });
-    } else {
-      setTimeout(run, 0);
-    }
-  }
-
-  async function flushVotes() {
-    if (isFlushingVotes) return;
-    if (voteQueue.length === 0) return;
-
-    isFlushingVotes = true;
-    try {
-      while (voteQueue.length > 0) {
-        const { decision, movieId } = voteQueue.shift();
-
-        try {
-          if (decision === 'yes') {
-            await api.postLike({ userId, movieId });
-            isFavoritesDirty = true;
-          } else {
-            await api.postDislike({ userId, movieId });
-          }
-        } catch (e) {
-          console.error('Ошибка отправки лайка/дизлайка:', e);
-          // Простейший ретрай: вернём элемент обратно и попробуем позже.
-          voteQueue.unshift({ decision, movieId });
-          break;
-        }
-      }
-    } finally {
-      isFlushingVotes = false;
-      scheduleFavoritesRefresh();
-
-      // Если очередь не пуста — попробуем позже.
-      if (voteQueue.length > 0) {
-        setTimeout(scheduleVoteFlush, 1500);
-      }
-    }
-  }
-
   function enqueueVotePersist(decision, movieId) {
-    voteQueue.push({ decision, movieId });
-    scheduleVoteFlush();
+    writeQueue.enqueue(
+      decision === 'yes' ? 'favorite.like' : 'favorite.dislike',
+      async () => {
+        if (decision === 'yes') {
+          return await api.postLike({ userId, movieId });
+        }
+        return await api.postDislike({ userId, movieId });
+      },
+      {
+        onSuccess: () => {
+          if (decision === 'yes') isFavoritesDirty = true;
+          scheduleFavoritesRefresh();
+        },
+      },
+    );
+  }
+
+  function restoreClosedCardContent(card) {
+    const elements = card.querySelectorAll(
+      '.card-bottom, .movie-button-list, .movie-button-list-item',
+    );
+    elements.forEach((el) => {
+      el.style.opacity = '1';
+    });
+  }
+
+  function prepareCardForExit(card) {
+    restoreClosedCardContent(card);
+    Object.assign(card.style, {
+      transition: 'all 0.5s ease-in-out',
+      position: '',
+      left: '',
+      top: '',
+      width: '',
+      height: '',
+      borderRadius: '',
+      transform: '',
+      opacity: '',
+      filter: '',
+      pointerEvents: '',
+      zIndex: '',
+      overflowY: '',
+    });
+  }
+
+  function promoteNextCardToActive(card) {
+    card.classList.remove('next');
+    card.classList.add('active');
+    restoreClosedCardContent(card);
+    // Плавно "всплываем" из next в active: transform/opacity/filter анимируются
+    // от значений CSS .card.next к значениям CSS .card.active за 0.5s.
+    // Чтобы сквозь полупрозрачную поднимающуюся карточку не просвечивала новая
+    // next из стопки, новая next добавляется только после завершения этой
+    // анимации (см. setTimeout в handleVoteLogic).
+    Object.assign(card.style, {
+      transition: 'all 0.5s ease-in-out',
+      position: '',
+      left: '',
+      top: '',
+      width: '',
+      height: '',
+      borderRadius: '',
+      transform: '',
+      opacity: '1',
+      filter: '',
+      pointerEvents: '',
+      zIndex: '',
+      overflowY: '',
+    });
+  }
+
+  function isRecommendationMode() {
+    return Boolean(state.recommendationMode);
+  }
+
+  function rememberRecommendationShown(movie) {
+    if (!isRecommendationMode() || !movie?.id || movie.isEndCard) return;
+    if (!state.recommendationShownIds.includes(movie.id)) {
+      state.recommendationShownIds.push(movie.id);
+    }
+
+    writeQueue.enqueue('recommendation.event.show', () =>
+      api.sendRecommendationEvent({
+        userId,
+        sessionId: state.recommendationSessionId,
+        movieId: movie.id,
+        eventType: 'show',
+        score: movie.recommendation_score,
+        metadata: movie.score_details ? { score_details: movie.score_details } : null,
+      }));
+  }
+
+  function rememberRecommendationVote(decision, movieId) {
+    if (!isRecommendationMode() || !movieId) return;
+
+    const target = decision === 'yes'
+      ? state.recommendationLikedIds
+      : state.recommendationDislikedIds;
+    const opposite = decision === 'yes'
+      ? state.recommendationDislikedIds
+      : state.recommendationLikedIds;
+
+    if (!target.includes(movieId)) target.push(movieId);
+
+    const oppositeIndex = opposite.indexOf(movieId);
+    if (oppositeIndex >= 0) opposite.splice(oppositeIndex, 1);
+
+    writeQueue.enqueue('recommendation.event.vote', () =>
+      api.sendRecommendationEvent({
+        userId,
+        sessionId: state.recommendationSessionId,
+        movieId,
+        eventType: decision === 'yes' ? 'like' : 'dislike',
+      }));
   }
 
   function attachGlobalDragListeners() {
@@ -109,11 +192,11 @@ export function createCardsController({
     document.addEventListener('touchend', handleDragEnd);
   }
 
-  async function loadMovieReviews(card, tmdbId) {
+  async function loadMovieReviews(card, movieId) {
     if (card.dataset.reviewsLoaded === 'true') return;
 
     try {
-      const reviews = await api.getReviews({ tmdbId });
+      const reviews = await api.getReviews({ movieId });
       displayReviews(card, reviews);
       card.dataset.reviewsLoaded = 'true';
     } catch (e) {
@@ -121,12 +204,12 @@ export function createCardsController({
     }
   }
 
-  async function loadMovieEmotionRatings(card, tmdbId) {
+  async function loadMovieEmotionRatings(card, movieId) {
     if (card.dataset.emotionsLoaded === 'true') return;
     try {
-      if (!tmdbId) return;
+      if (!movieId) return;
 
-      const emotionRatings = await api.getAvgEmotionRatings({ tmdbId });
+      const emotionRatings = await api.getAvgEmotionRatings({ movieId });
       if (emotionRatings) {
         displayEmotionRatings(card, emotionRatings);
         displayTopEmotionsText(card, emotionRatings);
@@ -143,74 +226,96 @@ export function createCardsController({
     if (state.movies[1]) createAndAppendCard(1, 'next');
   }
 
-  function createAndAppendCard(index, type) {
-    if (index >= state.movies.length) return;
-
-    const movie = state.movies[index];
+  // Клонирует template, заполняет карточку данными фильма и возвращает {card, bgImage}.
+  // Не вешает классы и слушатели — это делает вызывающий код.
+  function buildMovieCardFromTemplate(movie) {
     const template = document.getElementById('movie-card-template');
     const clone = template.content.cloneNode(true);
     const card = clone.querySelector('.card');
 
-    card.classList.add(type);
+    card.dataset.movieId = movie.id;
+    card.dataset.tmdbId = movie.tmdb_id ?? '';
+
+    const isMobile = state.width <= MOBILE_WIDTH_BREAKPOINT;
+    const bgImage = isMobile ? movie.vertical_poster_url : movie.horizontal_poster_url;
+    const cardFace = card.querySelector('.card-face');
+    if (cardFace) {
+      cardFace.style.backgroundImage = `url(${bgImage})`;
+    }
+
+    // Fallback'и нужны, чтобы textContent = null не превращал поле в строку "null".
+    card.querySelector('.movie-title').textContent = movie.title || '';
+    card.querySelector('.movie-country').textContent = movie.country || '—';
+    card.querySelector('.movie-genres').textContent = movie.genre || '—';
+
+    card.querySelector('.additional_info__title').innerHTML =
+      `${movie.title || ''} <span class="movie-year">(${movie.release_year || '—'})</span>`;
+    card.querySelector('.additional_info__director').textContent = movie.director || '—';
+    card.querySelector('.additional_info__description').textContent = movie.description || '—';
+    card.querySelector('.additional_info__cast').textContent = movie.actors || '—';
+    card.querySelector('.additional_info__genres').textContent = movie.genre || '—';
+    card.querySelector('.additional_info__rating').textContent = movie.rating || '—';
+
+    return { card, bgImage };
+  }
+
+  // Финальная карточка-заглушка "фильмы закончились".
+  function renderEndCard(index, type) {
+    const template = document.getElementById('movie-card-template');
+    const clone = template.content.cloneNode(true);
+    const card = clone.querySelector('.card');
+
+    card.classList.add(type, 'end-card');
     card.dataset.index = index;
 
     const isMobile = state.width <= MOBILE_WIDTH_BREAKPOINT;
-
-    // Финальная карточка (когда фильмы закончились).
-    if (movie.isEndCard) {
-      card.classList.add('end-card');
-      card.style.backgroundImage = isMobile
+    const cardFace = card.querySelector('.card-face');
+    if (cardFace) {
+      cardFace.style.backgroundImage = isMobile
         ? 'url("./images/not_found_vertical.png")'
         : 'url("./images/not_found_horizontal.png")';
-      card.style.backgroundSize = 'cover';
+      cardFace.style.backgroundSize = 'cover';
+    }
 
-      const elementsToHide = [
-        '.movie-info',
-        '.movie-description-wrapper',
-        '.movie-button-list',
-        '.additional_info',
-        '.overlay',
-      ];
+    const elementsToHide = [
+      '.card-bottom',
+      '.movie-button-list',
+      '.additional_info',
+      '.overlay',
+    ];
+    elementsToHide.forEach((selector) => {
+      const el = card.querySelector(selector);
+      if (el) el.style.display = 'none';
+    });
 
-      elementsToHide.forEach((selector) => {
-        const el = card.querySelector(selector);
-        if (el) el.style.display = 'none';
-      });
+    wrapper.appendChild(card);
+  }
 
-      wrapper.appendChild(card);
+  function createAndAppendCard(index, type) {
+    if (index >= state.movies.length) return;
+
+    const movie = state.movies[index];
+
+    if (movie.isEndCard) {
+      renderEndCard(index, type);
       return;
     }
 
-    const id = movie.id;
-    card.dataset.movieId = id;
-    card.dataset.tmdbId = movie.tmdb_id;
+    const { card, bgImage } = buildMovieCardFromTemplate(movie);
+    card.classList.add(type);
+    card.dataset.index = index;
 
-    const bgImage = isMobile ? movie.vertical_poster_url : movie.horizontal_poster_url;
-    card.style.backgroundImage = `url(${bgImage})`;
-
+    rememberRecommendationShown(movie);
     state.currentMovieId = movie.id;
 
-    card.querySelector('.movie-title').textContent = movie.title;
-    card.querySelector('.movie-description').textContent = movie.description;
-
-    card.querySelector('.additional_info__title').innerHTML =
-      `${movie.title} <span class="movie-year">(${movie.release_year})</span>`;
-    card.querySelector('.additional_info__director').textContent = movie.director;
-
-    card.querySelector('.additional_info__description').textContent = movie.description;
-    card.querySelector('.additional_info__cast').textContent = movie.actors;
-    card.querySelector('.additional_info__genres').textContent = movie.genre;
-    card.querySelector('.additional_info__rating').textContent = movie.rating;
-
     wrapper.appendChild(card);
-
     extractColors(bgImage, card);
 
     // Подгружаем отзывы и эмоции для active/next.
     if (type === 'active' || type === 'next') {
-      const tmdbId = card.dataset.tmdbId;
-      loadMovieReviews(card, tmdbId);
-      loadMovieEmotionRatings(card, tmdbId);
+      const mid = movie.id;
+      loadMovieReviews(card, mid);
+      loadMovieEmotionRatings(card, mid);
     }
 
     setupCardEvents(card);
@@ -251,28 +356,41 @@ export function createCardsController({
 
     const submitReviewBtn = card.querySelector('#submit-review-btn');
     if (submitReviewBtn) {
-      submitReviewBtn.addEventListener('click', async (e) => {
+      submitReviewBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         const reviewInput = card.querySelector('.reviews-section__input');
         if (reviewInput && reviewInput.value.trim()) {
-          const tmdbId = card.dataset.tmdbId;
-          if (!tmdbId) return;
+          const movieId = card.dataset.movieId;
+          if (!movieId) return;
 
+          const text = reviewInput.value.trim();
           const emotionData = collectEmotionData(card);
-          try {
-            const updatedReviews = await api.postReview({
-              tmdbId,
-              username,
-              text: reviewInput.value.trim(),
-              emotionData,
-            });
-            displayReviews(card, updatedReviews);
-          } catch (err) {
-            console.error('Ошибка отправки отзыва:', err);
-          }
+          const optimisticReview = {
+            id: `queued-${Date.now()}`,
+            movie_id: parseInt(movieId, 10),
+            username,
+            text,
+            ...emotionData,
+          };
 
+          displayReviews(card, [optimisticReview]);
           reviewInput.value = '';
           resetEmotionInterface(card);
+
+          writeQueue.enqueue(
+            'movie.review',
+            () => api.postReview({
+              movieId,
+              username,
+              text,
+              emotionData,
+            }),
+            {
+              onSuccess: (updatedReviews) => {
+                displayReviews(card, updatedReviews);
+              },
+            },
+          );
         }
       });
     }
@@ -352,39 +470,39 @@ export function createCardsController({
     if (state.isAnimating) return;
 
     const activeCard = wrapper.querySelector('.card.active');
-    if (!activeCard) return;
+    if (!activeCard || activeCard.classList.contains('end-card')) return;
 
     state.isAnimating = true;
+    // На случай голосования по кнопке (без drag) — тоже блокируем скролл страницы,
+    // пока активная карточка анимированно улетает.
+    document.body.classList.add('is-swiping');
 
     const movieId = parseInt(activeCard.dataset.movieId, 10);
+    if (!Number.isFinite(movieId)) {
+      state.isAnimating = false;
+      document.body.classList.remove('is-swiping');
+      return;
+    }
 
     // UI не ждёт БД: анимация сразу, запись — в фоне.
     enqueueVotePersist(decision, movieId);
+    rememberRecommendationVote(decision, movieId);
 
+    prepareCardForExit(activeCard);
     const exitClass = decision === 'yes' ? 'exit-right' : 'exit-left';
     activeCard.classList.add(exitClass);
     activeCard.classList.remove('active');
 
     const nextCard = wrapper.querySelector('.card.next');
     if (nextCard) {
-      nextCard.classList.remove('next');
-      nextCard.classList.add('active');
-      nextCard.style.transform = '';
+      promoteNextCardToActive(nextCard);
     }
 
     state.currentIndex++;
 
     if (state.currentIndex >= 10) {
-      let loader;
-      if (state.emotionFilter) {
-        loader = () =>
-          loaders.loadMoviesByEmotion(state, api, { emotion: state.emotionFilter, limit: 10, showLoader: false });
-      } else if (state.semanticQuery) {
-        loader = () =>
-          loaders.loadMoviesSemantic(state, api, { query: state.semanticQuery, userId, limit: 10, showLoader: false });
-      } else {
-        loader = () => loaders.loadMovies(state, api, { userId, limit: 10, showLoader: false });
-      }
+      const loader = () =>
+        loaders.loadRecommendedMovies(state, api, { userId, limit: 10, showLoader: false });
 
       try {
         const loaded = await loader();
@@ -399,11 +517,16 @@ export function createCardsController({
     }
 
     const nextNextIndex = state.currentIndex + 1;
-    createAndAppendCard(nextNextIndex, 'next');
 
     setTimeout(() => {
       activeCard.remove();
       state.isAnimating = false;
+      document.body.classList.remove('is-swiping');
+      // Новая next добавляется ТОЛЬКО после окончания exit-анимации.
+      // Иначе сквозь поднимающуюся новую active (у которой opacity плавно идёт
+      // 0.6 → 1) была бы видна свежесозданная next из стопки — выглядит как
+      // "две карточки одновременно".
+      createAndAppendCard(nextNextIndex, 'next');
     }, 500);
   }
 
@@ -418,77 +541,35 @@ export function createCardsController({
     state.isDragging = true;
     state.currentCard = card;
     state.startX = getClientX(e);
-    state.startY = getClientY(e);
 
-    state.initialLeft = card.offsetLeft;
-    state.initialTop = card.offsetTop;
-    state.startWidth = card.offsetWidth;
-    state.startHeight = card.offsetHeight;
+    // Блокируем скролл страницы, пока пользователь тащит карточку.
+    document.body.classList.add('is-swiping');
 
     card.style.transition = 'none';
   }
 
+  function getCardDragTiltDeg(deltaX, winW) {
+    const tiltRange = winW * 0.25;
+    if (tiltRange <= 0) return 0;
+
+    const ratio = Math.max(-1, Math.min(1, deltaX / tiltRange));
+    return ratio * MAX_CARD_TILT_DEG;
+  }
+
   function handleDragMove(e) {
-    if (!state.isDragging || !state.currentCard) return;
+    if (!state.isDragging || !state.currentCard || state.cardOpen) return;
 
-    const currentX = getClientX(e);
-    const currentY = getClientY(e);
-
-    const deltaX = currentX - state.startX;
-    const deltaY = currentY - state.startY;
+    const deltaX = getClientX(e) - state.startX;
     const winW = window.innerWidth;
-    const winH = window.innerHeight;
+    const tiltDeg = getCardDragTiltDeg(deltaX, winW);
 
-    if (!state.cardOpen) {
-      state.currentCard.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+    state.currentCard.style.transform =
+      `translateX(${deltaX}px) rotate(${tiltDeg}deg)`;
 
-      if (Math.abs(deltaX) >= winW * 0.1) {
-        state.currentCard.style.opacity = 1.1 - Math.abs(deltaX) / winW;
-      }
-    }
-
-    if (deltaY > 0) {
-      const triggerHeight = winH / 4;
-
-      if (deltaY > triggerHeight) {
-        openCard(state.currentCard, false);
-        state.isDragging = false;
-        return;
-      }
-
-      if (!state.cardOpen) {
-        const progress = Math.min(deltaY / triggerHeight, 1);
-
-        const currentW = lerp(state.startWidth, winW, progress);
-        const currentH = lerp(state.startHeight, winH, progress);
-
-        state.currentCard.style.width = `${currentW}px`;
-        state.currentCard.style.height = `${currentH}px`;
-
-        state.currentCard.style.transform = 'none';
-
-        const dragLeft = state.initialLeft + deltaX;
-        const currentLeft = lerp(dragLeft, 0, progress);
-
-        state.currentCard.style.left = `${currentLeft}px`;
-        state.currentCard.style.top = `${state.initialTop - deltaY / 1.8}px`;
-        state.currentCard.style.borderRadius = `${lerp(20, 0, progress)}px`;
-
-        const opacity = 1 - progress;
-        const ratings = state.currentCard.querySelector('.emotions-rating');
-        const description = state.currentCard.querySelector('.movie-description');
-        const title = state.currentCard.querySelector('.movie-title');
-        const buttons = state.currentCard.querySelectorAll('.movie-button-list-item');
-
-        if (ratings) ratings.style.opacity = opacity;
-        if (description) description.style.opacity = opacity;
-        if (title) title.style.opacity = opacity;
-        buttons.forEach((btn) => (btn.style.opacity = opacity));
-      }
+    if (Math.abs(deltaX) >= winW * 0.1) {
+      state.currentCard.style.opacity = 1.1 - Math.abs(deltaX) / winW;
     } else {
-      state.currentCard.style.width = '80%';
-      state.currentCard.style.height = '100%';
-      state.currentCard.style.borderRadius = '20px';
+      state.currentCard.style.opacity = '1';
     }
   }
 
@@ -501,26 +582,28 @@ export function createCardsController({
     if (!state.cardOpen) {
       state.isDragging = false;
 
-      card.style.transition = 'all 0.5s ease-in-out';
-      card.style.transform = '';
-      card.style.width = '';
-      card.style.height = '';
-      card.style.left = '';
-      card.style.top = '';
-      card.style.borderRadius = '';
-      card.style.opacity = '1';
-
-      const elementsToRestore = card.querySelectorAll(
-        '.emotions-rating, .movie-description, .movie-title, .movie-button-list-item',
-      );
-      elementsToRestore.forEach((el) => (el.style.opacity = '1'));
-
       const threshold = window.innerWidth * 0.25;
       if (Math.abs(deltaX) > threshold) {
+        // Свайп удался → карточка улетает; класс is-swiping снимет handleVoteLogic
+        // после завершения exit-анимации.
         void handleVoteLogic(deltaX > 0 ? 'yes' : 'no');
+      } else {
+        Object.assign(card.style, {
+          transition: 'all 0.5s ease-in-out',
+          transform: '',
+          width: '',
+          height: '',
+          left: '',
+          top: '',
+          borderRadius: '',
+          opacity: '1',
+        });
+        restoreClosedCardContent(card);
+        document.body.classList.remove('is-swiping');
       }
     } else {
       state.isDragging = false;
+      document.body.classList.remove('is-swiping');
     }
   }
 
@@ -530,38 +613,48 @@ export function createCardsController({
     return e.clientX;
   }
 
-  function getClientY(e) {
-    if (e.changedTouches && e.changedTouches.length > 0) return e.changedTouches[0].clientY;
-    if (e.touches && e.touches.length > 0) return e.touches[0].clientY;
-    return e.clientY;
-  }
-
-  function openCard(card, animated = false) {
+  function openCard(card, animated = false, options = {}) {
     state.cardOpen = true;
     card.classList.add('is-open');
+    if (isRecommendationMode()) {
+      writeQueue.enqueue('recommendation.event.open', () =>
+        api.sendRecommendationEvent({
+          userId,
+          sessionId: state.recommendationSessionId,
+          movieId: parseInt(card.dataset.movieId, 10),
+          eventType: 'open',
+        }));
+    }
 
-    const ratings = card.querySelector('.emotions-rating');
-    const description = card.querySelector('.movie-description');
-    const title = card.querySelector('.movie-title');
+    const cardBottom = card.querySelector('.card-bottom');
+    const buttonList = card.querySelector('.movie-button-list');
     const buttons = card.querySelectorAll('.movie-button-list-item');
     const addInfo = card.querySelector('.additional_info');
     const overlay = card.querySelectorAll('.overlay');
 
     const transitionMain = 'opacity 0.5s ease-in-out';
 
+    const startRect = animated
+      ? (options.startRect || card.getBoundingClientRect())
+      : null;
+
+    mountCardToOpenPortal(card);
+
     if (animated) {
-      const rect = card.getBoundingClientRect();
+      const startBorderRadius = options.startBorderRadius
+        || getComputedStyle(card).borderRadius;
 
       Object.assign(card.style, {
         transition: 'none',
         position: 'fixed',
-        left: `${rect.left}px`,
-        top: `${rect.top}px`,
-        width: `${rect.width}px`,
-        height: `${rect.height}px`,
-        borderRadius: getComputedStyle(card).borderRadius,
+        left: `${startRect.left}px`,
+        top: `${startRect.top}px`,
+        width: `${startRect.width}px`,
+        height: `${startRect.height}px`,
+        borderRadius: startBorderRadius,
         transform: 'none',
-        zIndex: '1000',
+        opacity: '1',
+        zIndex: '2100',
       });
 
       // Форсим reflow.
@@ -569,30 +662,35 @@ export function createCardsController({
 
       card.style.transition = 'all .5s ease-in-out';
 
-      if (ratings) ratings.style.transition = transitionMain;
-      if (description) description.style.transition = transitionMain;
-      if (title) title.style.transition = transitionMain;
+      if (cardBottom) cardBottom.style.transition = transitionMain;
+      if (buttonList) buttonList.style.transition = transitionMain;
       buttons.forEach((btn) => (btn.style.transition = transitionMain));
     }
 
-    // Учитываем safe-area на мобильных.
-    const isMobile = window.innerWidth < 768;
-    const safeAreaTop = isMobile ? 'env(safe-area-inset-top, 0px)' : '0px';
-    const safeAreaBottom = isMobile ? 'env(safe-area-inset-bottom, 0px)' : '0px';
+    const isWideScreen = window.innerWidth >= 769;
 
-    Object.assign(card.style, {
-      position: 'fixed',
-      borderRadius: '0',
-      width: '100%',
-      // Высота через `--app-height`, чтобы низ не “уезжал” под панели браузера.
-      height: `calc(var(--app-height, 100vh) - ${safeAreaTop} - ${safeAreaBottom})`,
-      top: safeAreaTop,
-      left: '0',
-      opacity: '1',
-      transform: 'none',
-      cursor: 'default',
-      zIndex: '1000',
-    });
+    const applyOpenLayout = () => {
+      Object.assign(card.style, {
+        position: 'fixed',
+        borderRadius: isWideScreen ? '' : '0',
+        width: 'var(--stack-open-card-width)',
+        height: 'var(--stack-open-card-height)',
+        top: 'var(--stack-open-card-top)',
+        left: 'var(--stack-open-card-left)',
+        opacity: '1',
+        transform: 'none',
+        cursor: 'default',
+        zIndex: '2100',
+      });
+    };
+
+    if (animated && options.startRect) {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(applyOpenLayout);
+      });
+    } else {
+      applyOpenLayout();
+    }
 
     const enableScroll = () => {
       card.style.overflowY = 'auto';
@@ -606,13 +704,12 @@ export function createCardsController({
     if (animated) setTimeout(enableScroll, 500);
     else enableScroll();
 
-    const tmdbId = card.dataset.tmdbId;
-    loadMovieReviews(card, tmdbId);
-    loadMovieEmotionRatings(card, tmdbId);
+    const movieId = card.dataset.movieId;
+    loadMovieReviews(card, movieId);
+    loadMovieEmotionRatings(card, movieId);
 
-    if (ratings) ratings.style.opacity = '0';
-    if (description) description.style.opacity = '0';
-    if (title) title.style.opacity = '0';
+    if (cardBottom) cardBottom.style.opacity = '0';
+    if (buttonList) buttonList.style.opacity = '0';
     buttons.forEach((btn) => (btn.style.opacity = '0'));
 
     const showAdditional = () => {
@@ -636,6 +733,7 @@ export function createCardsController({
   function closeCard(card) {
     state.cardOpen = false;
     card.classList.remove('is-open');
+    restoreCardFromOpenPortal(card);
 
     // Карточка из меню лайкнутых: просто удаляем её.
     if (card.dataset.fromFavorites === 'true') {
@@ -644,9 +742,8 @@ export function createCardsController({
       return;
     }
 
-    const ratings = card.querySelector('.emotions-rating');
-    const description = card.querySelector('.movie-description');
-    const title = card.querySelector('.movie-title');
+    const cardBottom = card.querySelector('.card-bottom');
+    const buttonList = card.querySelector('.movie-button-list');
     const buttons = card.querySelectorAll('.movie-button-list-item');
     const addInfo = card.querySelector('.additional_info');
     const overlay = card.querySelectorAll('.overlay');
@@ -671,17 +768,15 @@ export function createCardsController({
     const mainTransition = 'opacity 0.8s ease-in-out 0.3s';
     const infoTransition = 'opacity 0.2s ease-in-out';
 
-    if (ratings) ratings.style.transition = mainTransition;
-    if (description) description.style.transition = mainTransition;
-    if (title) title.style.transition = mainTransition;
+    if (cardBottom) cardBottom.style.transition = mainTransition;
+    if (buttonList) buttonList.style.transition = mainTransition;
     buttons.forEach((btn) => (btn.style.transition = mainTransition));
 
     if (addInfo) addInfo.style.transition = infoTransition;
     overlay.forEach((el) => (el.style.transition = infoTransition));
 
-    if (ratings) ratings.style.opacity = '1';
-    if (description) description.style.opacity = '1';
-    if (title) title.style.opacity = '1';
+    if (cardBottom) cardBottom.style.opacity = '1';
+    if (buttonList) buttonList.style.opacity = '1';
     buttons.forEach((btn) => (btn.style.opacity = '1'));
 
     if (addInfo) addInfo.style.opacity = '0';
@@ -692,38 +787,19 @@ export function createCardsController({
     }, 500);
   }
 
-  function openMovieFromFavorites(movie) {
+  function openMovieFromFavorites(movie, options = {}) {
     if (!movie) return;
 
-    const template = document.getElementById('movie-card-template');
-    const clone = template.content.cloneNode(true);
-    const card = clone.querySelector('.card');
-    if (!card) return;
-
+    const { card, bgImage } = buildMovieCardFromTemplate(movie);
     card.dataset.fromFavorites = 'true';
-    card.dataset.movieId = movie.id;
-    card.dataset.tmdbId = movie.tmdb_id;
-
-    const isMobile = state.width <= MOBILE_WIDTH_BREAKPOINT;
-    const bgImage = isMobile ? movie.vertical_poster_url : movie.horizontal_poster_url;
-    card.style.backgroundImage = `url(${bgImage})`;
-
-    card.querySelector('.movie-title').textContent = movie.title || '';
-    card.querySelector('.movie-description').textContent = movie.description || '';
-
-    card.querySelector('.additional_info__title').innerHTML =
-      `${movie.title || ''} <span class="movie-year">(${movie.release_year || '—'})</span>`;
-    card.querySelector('.additional_info__director').textContent = movie.director || '—';
-    card.querySelector('.additional_info__description').textContent = movie.description || '—';
-    card.querySelector('.additional_info__cast').textContent = movie.actors || '—';
-    card.querySelector('.additional_info__genres').textContent = movie.genre || '—';
-    card.querySelector('.additional_info__rating').textContent = movie.rating || '—';
+    card.style.opacity = '0';
 
     wrapper.appendChild(card);
     extractColors(bgImage, card);
     setupCardEvents(card);
 
-    openCard(card, false);
+    const animated = Boolean(options.startRect);
+    openCard(card, animated, options);
   }
 
   return {

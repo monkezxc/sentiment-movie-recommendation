@@ -1,12 +1,27 @@
+function normalizeStoredValue(value) {
+  const trimmed = (value ?? '').toString().trim();
+  if (!trimmed || trimmed === 'null' || trimmed === 'undefined') {
+    return null;
+  }
+  return trimmed;
+}
+
 // Берём user_id / username из query-string или localStorage и сохраняем обратно.
 export function initUserContext() {
   const params = new URLSearchParams(window.location.search);
 
-  const userId = params.get('user') || localStorage.getItem('user_id');
-  const username = params.get('username') || localStorage.getItem('username');
+  const userId =
+    normalizeStoredValue(params.get('user')) ||
+    normalizeStoredValue(localStorage.getItem('user_id'));
+  const username =
+    normalizeStoredValue(params.get('username')) ||
+    normalizeStoredValue(localStorage.getItem('username'));
 
-  localStorage.setItem('user_id', userId);
-  localStorage.setItem('username', username);
+  if (userId) localStorage.setItem('user_id', userId);
+  else localStorage.removeItem('user_id');
+
+  if (username) localStorage.setItem('username', username);
+  else localStorage.removeItem('username');
 
   return { userId, username };
 }

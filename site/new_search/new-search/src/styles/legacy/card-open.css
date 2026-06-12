@@ -1,0 +1,72 @@
+.card.is-open {
+    position: fixed;
+    user-select: text;
+    z-index: var(--stack-z-open-card);
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
+    width: var(--stack-open-card-width);
+    left: var(--stack-open-card-left);
+    top: var(--stack-open-card-top);
+    max-height: none;
+    height: var(--stack-open-card-height);
+}
+@media (width >= 769px) {
+    .card.is-open {
+        border-radius: var(--stack-radius-card);
+        box-shadow: var(--stack-card-shadow);
+    }
+}
+.is-open .card-face {
+    height: auto;
+    min-height: var(--stack-open-card-height);
+    box-sizing: border-box;
+    overflow: visible;
+    border-radius: 0;
+    box-shadow: none;
+    display: block;
+    background-position: center top;
+    background-size: 100% auto;
+    border-top-right-radius: 25px;
+    border-top-left-radius: 25px;
+}
+/* % не работает при height:auto — vh через переменную */
+.is-open .card-face::before {
+    content: '';
+    display: block;
+    width: 100%;
+    height: var(--stack-open-poster-height);
+    min-height: var(--stack-open-poster-height);
+    flex-shrink: 0;
+}
+.is-open .card-bottom {
+    display: none;
+}
+.is-open .additional_info {
+    position: relative;
+    top: auto;
+    height: auto;
+    margin-top: 0;
+}
+.is-open .close-card-button {
+    display: block;
+    top: var(--stack-close-btn-offset);
+    right: var(--stack-close-btn-offset);
+    width: var(--stack-close-btn-size);
+    height: var(--stack-close-btn-size);
+    padding: calc(var(--stack-close-btn-size) * 0.12);
+    background-size: 62%;
+    background-color: var(--color-glass);
+    opacity: 1;
+    backdrop-filter: blur(var(--blur-glass));
+    border-radius: calc(var(--stack-close-btn-size) * 0.08);
+    transition: transform 0.3s ease, background-color 0.3s ease;
+}
+.is-open .close-card-button:hover {
+    transform: scale(1.08);
+}
+.card:not(.is-open) .additional_info {
+    display: none !important;
+}

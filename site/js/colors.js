@@ -5,9 +5,25 @@ function isColorTooLight(r, g, b, threshold = 200) {
   return brightness > threshold;
 }
 
+function canAnalyzeImage(imagePath) {
+  if (!imagePath || typeof imagePath !== 'string') return false;
+
+  // Локальные пути и same-origin можно читать в canvas.
+  if (imagePath.startsWith('/') || imagePath.startsWith('./') || imagePath.startsWith('../')) {
+    return true;
+  }
+
+  try {
+    const imageUrl = new URL(imagePath, window.location.href);
+    return imageUrl.origin === window.location.origin;
+  } catch {
+    return false;
+  }
+}
+
 export async function extractColors(imagePath, cardElement) {
   const analyze = window.rgbaster || window.RGBaster;
-  if (!analyze) return;
+  if (!analyze || !canAnalyzeImage(imagePath)) return;
 
   try {
     const result = await analyze(imagePath, { ignore: ['rgb(255,255,255)'] });

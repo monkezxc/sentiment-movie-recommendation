@@ -1,0 +1,61 @@
+/* Токены legacy stack (--stack-*) */
+:root {
+    --stack-theme-rgb: 0, 0, 0;
+    --stack-text-primary: aliceblue;
+    --stack-font-main: "Unbounded", sans-serif;
+
+    --stack-bg-body: url('/@fs/E:/vibemovie_project/site/images/body_background.jpg');
+    --stack-bg-card: url('/@fs/E:/vibemovie_project/site/images/card_bg.jpg');
+    --stack-icon-cross: url('/@fs/E:/vibemovie_project/site/images/cross.png');
+
+    --stack-z-header: 2;
+    --stack-z-card: 5;
+    --stack-z-close-btn: 2;
+    --stack-z-favorites: 10001;
+    --stack-z-loader: 9999;
+    --stack-z-detail: 2100;
+    --stack-z-open-card: 2100;
+
+    --stack-radius-btn: 8px;
+    --stack-radius-card: 20px;
+    --stack-radius-input: 10px;
+    --stack-radius-filter: 8px;
+
+    --stack-card-width: 62%;
+    --stack-card-height: 86%;
+    --stack-card-left: 19%;
+    --stack-card-top: 4%;
+    --stack-card-actions-height: 44px;
+    --stack-card-actions-gap: 10px;
+    --stack-info-gradient-extra: 18px;
+    --stack-open-viewport-height: calc(
+        var(--app-height, 100vh) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)
+    );
+    --stack-open-card-width: 100%;
+    --stack-open-card-left: 0;
+    --stack-open-card-top: env(safe-area-inset-top, 0px);
+    --stack-open-card-height: var(--stack-open-viewport-height);
+    /* высота постера: 50%→80% по ширине экрана */
+    --stack-open-poster-height: calc(
+        var(--stack-open-card-height) *
+        clamp(0.5, 0.5 + 0.6 * clamp(0, (100vw - 360px) / 640px, 1), 0.8)
+    );
+    --stack-close-btn-size: clamp(32px, calc(var(--stack-open-viewport-height) * 0.058), 68px);
+    --stack-close-btn-offset: clamp(10px, calc(var(--stack-open-viewport-height) * 0.018), 22px);
+    --stack-card-shadow:
+        0 0 18px rgba(0, 0, 0, 0.55),
+        0 0 36px rgba(0, 0, 0, 0.22),
+        8px 8px 18px rgba(0, 0, 0, 0.65);
+    --stack-card-bg-color: #1a1a1a;
+
+    --stack-transition-card: 0.5s ease-in-out;
+    --stack-transition-fast: 0.2s ease;
+
+    --loader-color-one: #ffbf48;
+    --loader-color-two: #be4a1d;
+    --loader-color-three: #ffbf4780;
+    --loader-color-four: #bf4a1d80;
+    --loader-color-five: #ffbf4740;
+    --loader-time: 2s;
+    --loader-scale: 0.7;
+}

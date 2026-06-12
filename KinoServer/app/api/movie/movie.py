@@ -4,7 +4,9 @@ import os
 # Добавляем путь к корню проекта для импорта embedding
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..'))
 
-from fastapi import APIRouter, Depends, Query, HTTPException, Request
+import tempfile
+
+from fastapi import APIRouter, Depends, Query, HTTPException, Request, File, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.db import get_session
 from urllib.parse import urlparse
@@ -20,6 +22,8 @@ from app.schemas.schemas import (
     MovieIdsRequest,
     ReviewEmotionRequest,
     ReviewEmotionResponse,
+    PhotoEmotionResponse,
+    SurveyAnswersRequest,
 )
 from app.crud.crud import (
     get_movies,
@@ -27,15 +31,17 @@ from app.crud.crud import (
     get_reviews,
     get_emotion_ratings,
     get_avg_emotion_ratings,
+    get_avg_emotion_ratings_by_ids,
     get_movies_by_emotion,
+    get_movies_by_genre,
     get_movies_by_word,
-    get_movies_by_query,
+    search_movies_by_embedding,
     get_movies_by_ids,
     get_likes,
     get_dislikes,
     get_all_movies_id
 )
-from embedding.embedding import handle_query, to_embedding
+from embedding.embedding import to_embedding
 
 router = APIRouter(prefix="/movies", tags=["Фильмы"])
 
@@ -100,15 +106,25 @@ def _proxify_tmdb_image_url(request: Request, url: str | None) -> str | None:
 
 
 def _movie_to_response_dict(request: Request, movie_obj) -> dict:
-    """Явно формируем ответ (без мутации SQLAlchemy объекта)."""
+    """Явно формируем ответ (без мутации SQLAlchemy объекта).
+
+    Поля `embedding` и `reviews` намеренно не отдаём:
+    - `embedding` — массив на ~1024 float (десятки KB на фильм), фронту не нужен;
+    - `reviews` — текст отзывов, фронт грузит их отдельно через GET /movies/{id}/reviews.
+    """
+    public_id = (
+        movie_obj.kinopoisk_id
+        if movie_obj.kinopoisk_id is not None
+        else movie_obj.id
+    )
     return {
-        "id": movie_obj.id,
+        "id": public_id,
         "title": movie_obj.title,
         "release_year": movie_obj.release_year,
         "duration": movie_obj.duration,
         "genre": movie_obj.genre,
         "director": movie_obj.director,
-        "screenwriter": movie_obj.screenwriter,
+        "writers": getattr(movie_obj, "writers", None),
         "actors": movie_obj.actors,
         "description": movie_obj.description,
         "horizontal_poster_url": _proxify_tmdb_image_url(request, getattr(movie_obj, "horizontal_poster_url", None)),
@@ -117,8 +133,9 @@ def _movie_to_response_dict(request: Request, movie_obj) -> dict:
         "rating": movie_obj.rating,
         "tmdb_id": movie_obj.tmdb_id,
         "kinopoisk_id": getattr(movie_obj, "kinopoisk_id", None),
-        "embedding": movie_obj.embedding,
-        "reviews": movie_obj.reviews,
+        "title_foreign": bool(getattr(movie_obj, "title_foreign", False)),
+        "tags": getattr(movie_obj, "tags", None) or [],
+        "total_reviews": int(getattr(movie_obj, "total_reviews", 0) or 0),
     }
 
 
@@ -127,7 +144,7 @@ async def read_all_movies_id(
     session: AsyncSession = Depends(get_session),
 ):
     """
-    Получить список ID всех фильмов.
+    Список kinopoisk_id всех фильмов (для rating/update_avg и т.п.).
     """
     return await get_all_movies_id(session=session)
 
@@ -156,7 +173,7 @@ async def add_movie_review(
     session: AsyncSession = Depends(get_session),
 ):
     """
-    Добавить отзыв к фильму.
+    Добавить отзыв к фильму. movie_id = kinopoisk_id.
     """
     review = await add_review(movie_id, body.text, session, body.username,
                              body.sadness_rating, body.optimism_rating,
@@ -173,9 +190,7 @@ async def read_movie_reviews(
     session: AsyncSession = Depends(get_session),
 ):
     """
-    Получить отзывы по конкретному фильму.
-
-    - **movie_id**: ID фильма
+    Отзывы по фильму. movie_id = kinopoisk_id.
     """
     reviews = await get_reviews(movie_id, session)
     return [_review_to_response_dict(r) for r in reviews]
@@ -217,21 +232,31 @@ async def semantic_search_movies(
     - **skip**: Смещение для пагинации
     - **limit**: Количество фильмов в ответе
     """
-    movies_embeddings = await get_movies_by_query(skip=0, limit=10000, session=session)
-    
-    sorted_ids = handle_query(query, movies_embeddings["data"])
+    # 1. Считаем эмбеддинг запроса один раз. to_embedding() может вернуть
+    # numpy.ndarray — pgvector понимает оба формата, но приводим к list[float]
+    # для единообразия с остальным кодом.
+    query_embedding = to_embedding(query)
+    if hasattr(query_embedding, "tolist"):
+        query_embedding = query_embedding.tolist()
 
+    excluded_ids: list[int] = []
     if exclude_favorites:
         liked_ids = await get_likes(user_id, session)
         disliked_ids = await get_dislikes(user_id, session)
-        excluded_ids = set(liked_ids) | set(disliked_ids)
-        sorted_ids = [movie_id for movie_id in sorted_ids if movie_id not in excluded_ids]
+        excluded_ids = list(set(liked_ids or []) | set(disliked_ids or []))
 
-    paginated_ids = sorted_ids[skip:skip + limit]
-    
-    movies = await get_movies_by_ids(paginated_ids, session)
-    
-    return [_movie_to_response_dict(request, m) for m in movies]
+    # 2. Берём с запасом, чтобы skip/limit-пагинация имела что отдать.
+    # pgvector + HNSW делает это дёшево: O(log N) на запрос.
+    fetch_limit = skip + limit
+    movies = await search_movies_by_embedding(
+        query_embedding=query_embedding,
+        limit=max(fetch_limit, limit),
+        excluded_ids=excluded_ids,
+        session=session,
+    )
+
+    paginated = movies[skip:skip + limit]
+    return [_movie_to_response_dict(request, m) for m in paginated]
 
 
 @router.post("/embedding", response_model=EmbeddingResponse)
@@ -272,6 +297,45 @@ async def get_review_emotion(request: ReviewEmotionRequest):
     )
 
 
+@router.post("/emotion-from-photo", response_model=PhotoEmotionResponse)
+async def get_emotion_from_photo(file: UploadFile = File(...)):
+    """Определить эмоцию по загруженному фото."""
+    if not file.content_type or not file.content_type.startswith('image/'):
+        raise HTTPException(status_code=400, detail='Нужно загрузить изображение')
+
+    suffix = os.path.splitext(file.filename or '')[1] or '.jpg'
+    data = await file.read()
+    if not data:
+        raise HTTPException(status_code=400, detail='Файл пустой')
+
+    from anyio import to_thread
+    from face_recognition.face_recognition import analyze_photo_emotion
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+        tmp.write(data)
+        temp_path = tmp.name
+
+    try:
+        result = await to_thread.run_sync(analyze_photo_emotion, temp_path)
+    finally:
+        try:
+            os.remove(temp_path)
+        except OSError:
+            pass
+
+    if not result:
+        raise HTTPException(
+            status_code=422,
+            detail='Не удалось определить эмоцию на фото. Попробуйте другое изображение.',
+        )
+
+    return PhotoEmotionResponse(
+        emotion=result['emotion'],
+        detected_emotions=result.get('detected_emotions', []),
+        mapped_emotions=result.get('mapped_emotions', []),
+    )
+
+
 @router.post("/by-ids", response_model=list[Movie])
 async def get_movies_by_ids_endpoint(
     request: Request,
@@ -287,34 +351,62 @@ async def get_movies_by_ids_endpoint(
     return [_movie_to_response_dict(request, m) for m in movies]
 
 
-@router.get("/{tmdb_id}/emotion-ratings", response_model=dict[str, list[int]])
+@router.get("/{movie_id}/emotion-ratings", response_model=dict[str, list[int]])
 async def get_movie_emotion_ratings(
-    tmdb_id: int,
+    movie_id: int,
     session: AsyncSession = Depends(get_session),
 ):
     """
-    Получить рейтинги эмоций для фильма по TMDB ID.
-
-    - **tmdb_id**: ID фильма в TMDB
-    Возвращает: {'emotion1': [rating1, rating2, ...], 'emotion2': [...], ...}
+    Рейтинги эмоций по отзывам. movie_id = kinopoisk_id.
     """
-    ratings = await get_emotion_ratings(tmdb_id, session)
+    ratings = await get_emotion_ratings(movie_id, session)
     return ratings
 
 
-@router.get("/{tmdb_id}/avg-emotion-ratings", response_model=dict[str, float] | None)
+@router.get("/{movie_id}/avg-emotion-ratings", response_model=dict[str, float] | None)
 async def get_movie_avg_emotion_ratings(
-    tmdb_id: int,
+    movie_id: int,
     session: AsyncSession = Depends(get_session),
 ):
     """
-    Получить средние рейтинги эмоций для фильма по TMDB ID из таблицы ratings.
-
-    - **tmdb_id**: ID фильма в TMDB
-    Возвращает: {'sadness': 3.5, 'optimism': 7.2, ...} или None если фильм не найден
+    Средние рейтинги из таблицы ratings. movie_id = kinopoisk_id.
     """
-    ratings = await get_avg_emotion_ratings(tmdb_id, session)
+    ratings = await get_avg_emotion_ratings(movie_id, session)
     return ratings
+
+
+@router.post(
+    "/avg-emotion-ratings/by-ids",
+    response_model=dict[int, dict[str, float]],
+)
+async def get_movie_avg_emotion_ratings_by_ids(
+    body: MovieIdsRequest,
+    session: AsyncSession = Depends(get_session),
+):
+    """
+    Батч-версия: средние рейтинги эмоций сразу для списка фильмов.
+    Возвращает только те id, для которых нашлась запись в `ratings`.
+
+    - **movie_ids**: список kinopoisk_id
+    """
+    return await get_avg_emotion_ratings_by_ids(body.movie_ids, session)
+
+
+@router.get("/by-genre/{genre}", response_model=list[Movie])
+async def get_movies_by_genre_endpoint(
+    request: Request,
+    genre: str,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(20, ge=1, le=100),
+    session: AsyncSession = Depends(get_session),
+):
+    """
+    Получить фильмы с тегом жанра (genre_* в поле tags), по убыванию рейтинга.
+
+    - **genre**: slug жанра (drama, comedy) или полный тег (genre_drama)
+    """
+    movies = await get_movies_by_genre(genre, skip, limit, session)
+    return [_movie_to_response_dict(request, m) for m in movies]
 
 
 @router.get("/by-emotion/{emotion}", response_model=list[Movie])
@@ -328,7 +420,7 @@ async def get_movies_by_emotion_endpoint(
     """
     Получить фильмы, отсортированные по рейтингу указанной эмоции (от большего к меньшему).
 
-    - **emotion**: Название эмоции (sadness, optimism, fear, anger, neutral, worry, love, fun, boredom)
+    - **emotion**: Название эмоции (sadness, optimism, fear, anger, worry, love, fun, boredom)
     - **skip**: Сколько фильмов пропустить (offset)
     - **limit**: Сколько фильмов вернуть
     Возвращает только фильмы с рейтингом выбранной эмоции > 0
@@ -338,9 +430,7 @@ async def get_movies_by_emotion_endpoint(
 
 ######
 
-@router.post("/genres-by-survey", response_model=dict[str, list[str]])
-async def get_genres_by_survey(request: Request,
-                               q1: int, q2: int, q3: int, q4: int, q5: int, q6: int):
-
-    answers = [q1, q2, q3, q4, q5, q6]
+@router.post("/genres-by-survey")
+async def get_genres_by_survey(body: SurveyAnswersRequest):
+    answers = [body.q1, body.q2, body.q3, body.q4, body.q5, body.q6]
     return await get_emotion_genres(answers)

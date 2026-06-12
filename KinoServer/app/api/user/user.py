@@ -4,7 +4,17 @@ from sqlalchemy import text
 from app.db.db import get_session
 
 from app.schemas.schemas import MovieAction, FavoriteResponse
-from app.crud.crud import add_like, add_dislike, get_likes, get_favorite_by_user, get_dislikes, clear_likes, clear_dislikes
+from app.crud.crud import (
+    add_like,
+    add_dislike,
+    remove_like,
+    remove_dislike,
+    get_likes,
+    get_favorite_by_user,
+    get_dislikes,
+    clear_likes,
+    clear_dislikes,
+)
 
 
 router = APIRouter(prefix="/favorite", tags=["Favorite"])
@@ -39,6 +49,30 @@ async def get_liked_movies(
     session: AsyncSession = Depends(get_session),
 ):
     return await get_likes(user_id, session)
+
+
+@router.post("/remove-like/{user_id}", response_model=list[int])
+async def remove_liked_movie(
+    user_id: str,
+    body: MovieAction,
+    session: AsyncSession = Depends(get_session),
+):
+    movies = await remove_like(user_id, body.movie_id, session)
+    if movies is None:
+        raise HTTPException(status_code=404, detail="Пользователь не найден. Нужна регистрация в боте.")
+    return movies
+
+
+@router.post("/remove-dislike/{user_id}", response_model=list[int])
+async def remove_disliked_movie(
+    user_id: str,
+    body: MovieAction,
+    session: AsyncSession = Depends(get_session),
+):
+    movies = await remove_dislike(user_id, body.movie_id, session)
+    if movies is None:
+        raise HTTPException(status_code=404, detail="Пользователь не найден. Нужна регистрация в боте.")
+    return movies
 
 
 @router.post("/dislike/{user_id}", response_model=list[int])

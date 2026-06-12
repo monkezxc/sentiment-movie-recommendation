@@ -27,6 +27,7 @@ export function displayReviews(card, reviews) {
       };
 
       Object.entries(emotionLabels).forEach(([key, label]) => {
+        if (key === 'neutral_rating') return;
         const rating = review[key];
         if (rating && rating > 0) {
           emotions.push(`${label} ${rating}`);

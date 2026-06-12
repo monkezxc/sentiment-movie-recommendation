@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class MovieAction(BaseModel):
@@ -54,13 +54,20 @@ class ReviewResponse(BaseModel):
 
 
 class Movie(BaseModel):
+    """Публичный id фильма в API = kinopoisk_id (если есть), иначе внутренний id строки.
+
+    Поля `embedding` и `reviews` сюда не входят:
+    - `embedding` хранится в БД, но клиенту не отдаётся (большой размер);
+    - `reviews` доступны через GET /movies/{id}/reviews.
+    """
+
     id: int
     title: str
     release_year: int | None
     duration: int | None
     genre: str | None
     director: str | None
-    screenwriter: str | None
+    writers: str | None
     actors: str | None
     description: str | None
     horizontal_poster_url: str | None
@@ -69,11 +76,53 @@ class Movie(BaseModel):
     rating: float | None
     tmdb_id: int | None
     kinopoisk_id: int | None = None
-    embedding: list[float] | None
-    reviews: list[str] | None
+    title_foreign: bool = False
+    tags: list[str] | None = None
+    total_reviews: int = 0
 
     class Config:
         orm_mode = True
+
+
+class SurveyAnswersRequest(BaseModel):
+    q1: int = Field(ge=0, le=3)
+    q2: int = Field(ge=0, le=3)
+    q3: int = Field(ge=0, le=3)
+    q4: int = Field(ge=0, le=3)
+    q5: int = Field(ge=0, le=3)
+    q6: int = Field(ge=0, le=3)
+
+
+class RecommendationRequest(BaseModel):
+    user_id: str
+    session_id: str | None = None
+    query: str | None = None
+    mood: str | None = None
+    genre: str | None = None
+    title_search: str | None = None
+    strict_mood_filter: bool = False
+    survey_genres: list[str] = Field(default_factory=list)
+    survey_emotions: list[str] = Field(default_factory=list)
+    shown_ids: list[int] = Field(default_factory=list)
+    session_liked_ids: list[int] = Field(default_factory=list)
+    session_disliked_ids: list[int] = Field(default_factory=list)
+    limit: int = 20
+    candidate_limit: int = 10000
+
+
+class RecommendationEventCreate(BaseModel):
+    user_id: str
+    session_id: str | None = None
+    movie_id: int | None = None
+    event_type: str
+    score: float | None = None
+    metadata: dict | None = None
+
+
+class RecommendedMovie(Movie):
+    recommendation_score: float | None = None
+    recommendation_reason: str | None = None
+    score_details: dict[str, float] | None = None
 
 
 class FavoriteResponse(BaseModel):
@@ -94,6 +143,8 @@ class EmbeddingResponse(BaseModel):
 
 
 class MovieIdsRequest(BaseModel):
+    """Список kinopoisk_id (совпадает с полем id в ответах /movies)."""
+
     movie_ids: list[int]
 
 
@@ -110,3 +161,9 @@ class ReviewEmotionResponse(BaseModel):
     """
     emotion: str
     confidence: float
+
+
+class PhotoEmotionResponse(BaseModel):
+    emotion: str
+    detected_emotions: list[str] = Field(default_factory=list)
+    mapped_emotions: list[str] = Field(default_factory=list)

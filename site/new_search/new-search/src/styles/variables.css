@@ -1,0 +1,150 @@
+/* Дизайн-токены */
+:root {
+    /* JS */
+    --searchbarGlow: #e052638c;
+    --blob-1: #e05263;
+    --blob-2: #69a2b0;
+    --blob-3: #a1c084;
+
+    /* кнопки */
+    --color-red: rgb(250, 37, 90);
+    --color-green: rgb(79, 206, 75);
+    --color-yellow: rgb(223, 245, 29);
+    --color-orange: rgb(241, 173, 24);
+    --color-purple: rgb(194, 33, 243);
+    --color-pink: rgb(255, 45, 185);
+    --color-blue: rgb(33, 184, 230);
+    --color-rating: rgba(0, 247, 255, 0.692);
+
+    /* текст */
+    --color-text: #f2f2f7;
+    --color-text-muted: #f2f2f798;
+    --color-text-dark: #1c1c1c;
+    --color-text-body-dark: #2a2a2a;
+    --color-error: #ff7f9a;
+    --color-error-soft: #ff8a8a;
+
+    /* стекло */
+    --color-glass: rgba(177, 177, 177, 0.295);
+    --color-glass-hover: rgba(177, 177, 177, 0.42);
+    --color-glass-solid: rgba(28, 28, 28, 0.72);
+    --color-overlay: rgba(0, 0, 0, 0.315);
+    --color-dropdown-bg: rgba(28, 28, 28, 0.94);
+    --color-dropdown-border: rgba(255, 255, 255, 0.14);
+    --color-dropdown-option: rgba(255, 255, 255, 0.06);
+    --color-dropdown-option-hover: rgba(255, 255, 255, 0.12);
+    --color-tooltip-bg: rgba(18, 18, 22, 0.94);
+    --color-survey-bg: rgba(24, 24, 30, 0.96);
+    --color-survey-overlay: rgba(0, 0, 0, 0.62);
+    --color-survey-border: rgba(255, 255, 255, 0.08);
+    --color-survey-option: rgba(255, 255, 255, 0.04);
+    --color-survey-option-active: rgba(33, 184, 230, 0.18);
+    --color-card-preview: rgba(255, 255, 255, 0.4);
+    --color-ambient: #0b0b12;
+    --color-poster-placeholder: #000000;
+
+    /* фильтры active */
+    --color-emotion-active: rgba(79, 206, 75, 0.28);
+    --color-genre-active: rgba(250, 37, 90, 0.28);
+    --color-view-mode-active: rgba(255, 255, 255, 0.55);
+
+    /* раскладка */
+    --content-width: 70%;
+    --content-side-gap: 15vw;
+    --page-padding: 0px;
+    --searchbar-height: 60px;
+    --searchbar-font: 32px;
+    --card-height: 225px;
+    --rating-width: 20%;
+
+    /* радиусы */
+    --radius-pill: 40px;
+    --radius-query-type-left: var(--radius-pill) 0 0 var(--radius-pill);
+    --radius-query-type-right: 0 var(--radius-pill) var(--radius-pill) 0;
+    --radius-searchbar: 50px;
+    --radius-card: 24px;
+    --radius-card-inner: 15px;
+    --radius-rating: 24px 60px 24px 60px;
+    --radius-dropdown: 16px;
+    --radius-dropdown-option: 12px;
+    --radius-survey: 24px;
+    --radius-survey-option: 16px;
+    --radius-tooltip: 12px;
+
+    /* шрифты */
+    --font-filter: 16px;
+    --font-dropdown: 15px;
+    --font-dropdown-empty: 14px;
+    --font-tooltip: 13px;
+    --font-survey-progress: 14px;
+    --font-survey-category: 13px;
+    --font-survey-question: clamp(20px, 2.4vw, 28px);
+    --font-survey-option: 15px;
+    --font-survey-error: 14px;
+    --font-movie-title: 22px;
+    --font-movie-description: 15px;
+    --font-rating: 22px;
+    --font-status: 24px;
+    --font-load-more: 16px;
+
+    /* отступы */
+    --gap-search-row: 12px;
+    --gap-filters: 10px 12px;
+    --gap-cards: 16px;
+    --padding-filter: 10px 15px 10px 20px;
+    --padding-dropdown: 12px;
+    --padding-survey-header: 18px 22px 10px;
+    --padding-survey-body: 8px 22px 16px;
+    --padding-survey-footer: 14px 22px 20px;
+
+    /* размеры */
+    --dropdown-min-width: 230px;
+    --dropdown-searchable-min-width: 260px;
+    --dropdown-max-height: min(60dvh, 250px);
+    --dropdown-options-max-height: min(45dvh, 150px);
+    --survey-width: min(80vw, 900px);
+    --survey-height: min(80vh, 760px);
+    --survey-nav-min-width: 120px;
+    --load-more-min-width: 200px;
+
+    /* тени */
+    --shadow-searchbar: 0 0 30px rgb(32, 32, 32);
+    --shadow-searchbar-focus: 0 0 50px var(--searchbarGlow);
+    --shadow-dropdown: 0 10px 36px rgba(0, 0, 0, 0.45);
+    --shadow-survey: 0 24px 80px rgba(0, 0, 0, 0.45);
+    --shadow-rating: 0 0 10px var(--color-rating);
+    --shadow-filter-red: 0 0 15px var(--color-red);
+    --shadow-filter-green: 0 0 15px var(--color-green);
+    --shadow-filter-yellow: 0 0 15px var(--color-yellow);
+    --shadow-filter-blue: 0 0 15px var(--color-blue);
+    --shadow-filter-orange: 0 0 15px var(--color-orange);
+    --shadow-filter-purple: 0 0 15px var(--color-purple);
+    --shadow-filter-pink: 0 0 15px var(--color-pink);
+    --shadow-survey-option-active: 0 0 18px rgba(33, 184, 230, 0.25);
+
+    /* blur */
+    --blur-page: 20px;
+    --blur-glass: 100px;
+    --blur-card: 50px;
+    --blur-dropdown: 16px;
+    --blur-blob: 80px;
+
+    /* z-index */
+    --z-ambient: 0;
+    --z-overlay: 1;
+    --z-filters: 200;
+    --z-cards: 100;
+    --z-main: 50;
+    --z-dropdown: 10000;
+    --z-survey: 20000;
+    --z-favorites-toggle: 500;
+    --z-favorites: 600;
+
+    /* анимации */
+    --transition-fast: 0.2s ease;
+    --transition-filter: 0.3s ease-out;
+    --transition-layout: 0.5s ease-in-out;
+    --transition-blob: 1s ease;
+    --transition-card-hover: 0.25s ease-in-out;
+    --blob-animation-duration: 14s;
+}

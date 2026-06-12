@@ -1,0 +1,41 @@
+.ambient_bg {
+    position: absolute;
+    inset: 0;
+    z-index: var(--z-ambient);
+    overflow: hidden;
+    background: var(--color-ambient);
+    pointer-events: none;
+}
+.blob {
+    position: absolute;
+    width: 55vmax;
+    height: 55vmax;
+    border-radius: 50%;
+    filter: blur(var(--blur-blob));
+    opacity: 0.65;
+    transition: background var(--transition-blob), opacity 0.6s ease;
+    animation: blobFloat var(--blob-animation-duration) ease-in-out infinite;
+}
+.blob_1 {
+    top: -10%;
+    left: -15%;
+    background: radial-gradient(circle at 30% 30%, var(--blob-1), transparent 70%);
+    height: 80vmax;
+}
+.blob_2 {
+    bottom: -20%;
+    right: 20%;
+    background: radial-gradient(circle at 60% 40%, var(--blob-2), transparent 65%);
+    animation-delay: -5s;
+    width: 33vmax;
+}
+.blob_3 {
+    top: 40%;
+    left: 35%;
+    background: radial-gradient(circle, var(--blob-3), transparent 60%);
+    animation-delay: -9s;
+}
+@keyframes blobFloat {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(50%, -35%) scale(1.2); }
+}

@@ -4,6 +4,7 @@ import { createState } from './js/state.js';
 import { initUserContext, ensureUserExistsOrShowStub } from './js/user_gate.js';
 import { createFavoritesController } from './js/favorites.js';
 import { createCardsController } from './js/cards.js';
+import { createWriteQueue } from './js/write_queue.js';
 import * as loaders from './js/loaders.js';
 import { initViewportHeightFix } from './js/viewport_fix.js';
 
@@ -32,6 +33,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const state = createState();
   const api = createApi({ apiUrl: API_URL });
+  const writeQueue = createWriteQueue();
 
   const wrapper = document.querySelector('.cards-wrapper');
   const searchInput = document.querySelector('.header__search');
@@ -50,6 +52,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     userId: effectiveUserId,
     username,
     loaders,
+    writeQueue,
     onFavoritesUpdated: async () => {
       if (favoritesController) {
         await favoritesController.loadAndDisplayLikedMovies();
@@ -60,6 +63,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   favoritesController = createFavoritesController({
     api,
     userId: effectiveUserId,
+    writeQueue,
     onOpenMovie: (movie) => cardsController.openMovieFromFavorites(movie),
   });
 
@@ -67,9 +71,51 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   cardsController.attachGlobalDragListeners();
 
+  function createRecommendationSessionId() {
+    return window.crypto && typeof window.crypto.randomUUID === 'function'
+      ? window.crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  }
+
+  function resetRecommendationState({ enabled = true, query = '', mood = null } = {}) {
+    state.recommendationMode = enabled;
+    state.recommendationSessionId = createRecommendationSessionId();
+    state.recommendationQuery = query;
+    state.recommendationMood = mood;
+    state.recommendationShownIds = [];
+    state.recommendationLikedIds = [];
+    state.recommendationDislikedIds = [];
+  }
+
+  async function loadHomeRecommendations() {
+    state.searchQuery = '';
+    state.semanticQuery = '';
+    state.emotionFilter = null;
+    state.genreFilter = null;
+    resetRecommendationState();
+    state.offset = 0;
+    state.movies = [];
+    state.currentIndex = 0;
+    state.endCardAdded = false;
+
+    wrapper.innerHTML = '';
+
+    const sessionId = state.recommendationSessionId;
+    const query = state.recommendationQuery;
+    const mood = state.recommendationMood;
+    writeQueue.enqueue('recommendation.session', () =>
+      api.createRecommendationSession({
+        userId: effectiveUserId,
+        sessionId,
+        query,
+        mood,
+      }));
+    await loaders.loadRecommendedMovies(state, api, { userId: effectiveUserId, limit: 20 });
+    if (state.movies.length > 0) cardsController.renderInitialStack();
+  }
+
   async function init() {
-    await loaders.loadMovies(state, api, { userId: effectiveUserId, limit: 20 });
-    cardsController.renderInitialStack();
+    await loadHomeRecommendations();
     await favoritesController.loadAndDisplayLikedMovies();
   }
 
@@ -78,8 +124,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!query) return;
 
     state.searchQuery = '';
+    state.semanticQuery = '';
     // Пытаемся обогатить текст запроса определённой эмоцией.
     let enrichedQuery = query;
+    let detectedMood = null;
     try {
       const result = await api.detectEmotionFromText({ text: query });
       const emotion = (result?.emotion || '').toString().trim();
@@ -97,7 +145,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         boredom: 'скука',
       };
 
-      if (emotion) {
+      if (emotion && emotion !== 'neutral') {
+        detectedMood = emotion;
         const humanEmotion = emotionRu[emotion] || emotion;
         enrichedQuery = `${query}\nЭмоция запроса: ${humanEmotion}`;
       }
@@ -106,7 +155,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       console.warn('Не удалось определить эмоцию для запроса:', e);
     }
 
-    state.semanticQuery = enrichedQuery;
+    resetRecommendationState({ query: enrichedQuery, mood: detectedMood });
     state.offset = 0;
     state.movies = [];
     state.currentIndex = 0;
@@ -114,11 +163,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     wrapper.innerHTML = '';
 
-    await loaders.loadMoviesSemantic(state, api, {
-      query: enrichedQuery,
-      userId: effectiveUserId,
-      limit: 20,
-    });
+    const sessionId = state.recommendationSessionId;
+    writeQueue.enqueue('recommendation.session', () =>
+      api.createRecommendationSession({
+        userId: effectiveUserId,
+        sessionId,
+        query: enrichedQuery,
+        mood: detectedMood,
+      }));
+    await loaders.loadRecommendedMovies(state, api, { userId: effectiveUserId, limit: 20 });
     if (state.movies.length > 0) cardsController.renderInitialStack();
   }
 
@@ -126,20 +179,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     const selectedEmotion = emotionsFilter.value;
 
     if (!selectedEmotion || selectedEmotion === 'all') {
-      // Без фильтра: показываем обычные фильмы.
-      state.emotionFilter = null;
-      state.offset = 0;
-      state.movies = [];
-      state.currentIndex = 0;
-      state.endCardAdded = false;
-
-      wrapper.innerHTML = '';
-      await loaders.loadMovies(state, api, { userId: effectiveUserId, limit: 20 });
-      if (state.movies.length > 0) cardsController.renderInitialStack();
+      await loadHomeRecommendations();
       return;
     }
 
-    // Применяем фильтр по эмоции.
+    resetRecommendationState({ enabled: true, mood: selectedEmotion });
+    state.semanticQuery = '';
+    state.searchQuery = '';
+    state.genreFilter = null;
     state.emotionFilter = selectedEmotion;
     state.offset = 0;
     state.movies = [];
@@ -147,14 +194,32 @@ document.addEventListener('DOMContentLoaded', async () => {
     state.endCardAdded = false;
 
     wrapper.innerHTML = '';
-    await loaders.loadMoviesByEmotion(state, api, { emotion: selectedEmotion, limit: 20 });
+
+    const sessionId = state.recommendationSessionId;
+    writeQueue.enqueue('recommendation.session', () =>
+      api.createRecommendationSession({
+        userId: effectiveUserId,
+        sessionId,
+        query: null,
+        mood: selectedEmotion,
+      }));
+    await loaders.loadRecommendedMovies(state, api, { userId: effectiveUserId, limit: 20 });
     if (state.movies.length > 0) cardsController.renderInitialStack();
   }
 
   async function handleSearch() {
     const query = searchInput.value.trim();
 
+    if (!query) {
+      await loadHomeRecommendations();
+      return;
+    }
+
     state.searchQuery = query;
+    state.semanticQuery = '';
+    state.emotionFilter = null;
+    state.genreFilter = null;
+    resetRecommendationState({ enabled: true, query });
     state.offset = 0;
     state.movies = [];
     state.currentIndex = 0;
@@ -162,7 +227,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     wrapper.innerHTML = '';
 
-    await loaders.loadMovies(state, api, { userId: effectiveUserId, limit: 20 });
+    const sessionId = state.recommendationSessionId;
+    writeQueue.enqueue('recommendation.session', () =>
+      api.createRecommendationSession({
+        userId: effectiveUserId,
+        sessionId,
+        query,
+        mood: null,
+      }));
+    await loaders.loadRecommendedMovies(state, api, { userId: effectiveUserId, limit: 20 });
     if (state.movies.length > 0) cardsController.renderInitialStack();
   }
 

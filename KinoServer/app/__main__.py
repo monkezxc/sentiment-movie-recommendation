@@ -18,15 +18,19 @@ def _read_cors_origins() -> list[str]:
     defaults = [
         "http://localhost",
         "http://localhost:5173",
+        "http://localhost:5174",
         "http://localhost:5500",
         "https://localhost",
         "https://localhost:5173",
+        "https://localhost:5174",
         "http://127.0.0.1",
         "http://127.0.0.1:5173",
+        "http://127.0.0.1:5174",
         "http://127.0.0.1:5500",
         "http://127.0.0.1:8080",
         "https://127.0.0.1",
         "https://127.0.0.1:5173",
+        "https://127.0.0.1:5174",
         "https://127.0.0.1:8080",
     ]
 
@@ -39,9 +43,13 @@ def _read_cors_origins() -> list[str]:
     return out
 
 
+# Любой порт на localhost/127.0.0.1 — Vite часто занимает 5174, 5175 и т.д.
+_LOCAL_ORIGIN_REGEX = r"https?://(localhost|127\.0\.0\.1)(:\d+)?"
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_read_cors_origins(),
+    allow_origin_regex=_LOCAL_ORIGIN_REGEX,
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],

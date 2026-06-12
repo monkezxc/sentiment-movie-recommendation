@@ -22,12 +22,81 @@ export function createApi({ apiUrl }) {
       return await fetchJson(url);
     },
 
+    async fetchMoviesByGenre({ genre, skip, limit }) {
+      const url = `${apiUrl}/movies/by-genre/${encodeURIComponent(genre)}?skip=${skip}&limit=${limit}`;
+      return await fetchJson(url);
+    },
+
     async fetchMoviesSemantic({ query, skip, limit, userId, excludeFavorites }) {
       const url =
         `${apiUrl}/movies/semantic-search?query=${encodeURIComponent(query)}` +
         `&skip=${skip}&limit=${limit}&user_id=${encodeURIComponent(userId)}` +
         `&exclude_favorites=${excludeFavorites ? 'true' : 'false'}`;
       return await fetchJson(url);
+    },
+
+    async createRecommendationSession({ userId, sessionId, query, mood }) {
+      return await fetchJson(`${apiUrl}/recommendations/session`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: userId,
+          session_id: sessionId,
+          query: query || null,
+          mood: mood || null,
+        }),
+      });
+    },
+
+    async fetchRecommendations({
+      userId,
+      sessionId,
+      query,
+      mood,
+      genre,
+      titleSearch,
+      strictMoodFilter,
+      surveyGenres,
+      surveyEmotions,
+      shownIds,
+      sessionLikedIds,
+      sessionDislikedIds,
+      limit,
+    }) {
+      return await fetchJson(`${apiUrl}/recommendations/movies`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: userId,
+          session_id: sessionId,
+          query: query || null,
+          mood: mood || null,
+          genre: genre || null,
+          title_search: titleSearch || null,
+          strict_mood_filter: Boolean(strictMoodFilter),
+          survey_genres: surveyGenres || [],
+          survey_emotions: surveyEmotions || [],
+          shown_ids: shownIds || [],
+          session_liked_ids: sessionLikedIds || [],
+          session_disliked_ids: sessionDislikedIds || [],
+          limit,
+        }),
+      });
+    },
+
+    async sendRecommendationEvent({ userId, sessionId, movieId, eventType, score, metadata }) {
+      return await fetchJson(`${apiUrl}/recommendations/event`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: userId,
+          session_id: sessionId || null,
+          movie_id: movieId || null,
+          event_type: eventType,
+          score: score ?? null,
+          metadata: metadata || null,
+        }),
+      });
     },
 
     /** @returns {Promise<{emotion: string, confidence: number}>} */
@@ -50,6 +119,22 @@ export function createApi({ apiUrl }) {
 
     async postDislike({ userId, movieId }) {
       return await fetchJson(`${apiUrl}/favorite/dislike/${encodeURIComponent(userId)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ movie_id: movieId }),
+      });
+    },
+
+    async removeLike({ userId, movieId }) {
+      return await fetchJson(`${apiUrl}/favorite/remove-like/${encodeURIComponent(userId)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ movie_id: movieId }),
+      });
+    },
+
+    async removeDislike({ userId, movieId }) {
+      return await fetchJson(`${apiUrl}/favorite/remove-dislike/${encodeURIComponent(userId)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ movie_id: movieId }),
@@ -93,24 +178,47 @@ export function createApi({ apiUrl }) {
       }
     },
 
-    async getReviews({ tmdbId }) {
-      return await fetchJson(`${apiUrl}/movies/${encodeURIComponent(tmdbId)}/reviews`);
+    /** @param {number|string} movieId — kinopoisk_id (поле id в ответе API). */
+    async getReviews({ movieId, tmdbId }) {
+      const id = movieId ?? tmdbId;
+      return await fetchJson(`${apiUrl}/movies/${encodeURIComponent(id)}/reviews`);
     },
 
-    async getAvgEmotionRatings({ tmdbId }) {
+    async getAvgEmotionRatings({ movieId, tmdbId }) {
+      const id = movieId ?? tmdbId;
       return await fetchJson(
-        `${apiUrl}/movies/${encodeURIComponent(tmdbId)}/avg-emotion-ratings`,
+        `${apiUrl}/movies/${encodeURIComponent(id)}/avg-emotion-ratings`,
       );
     },
 
-    async postReview({ tmdbId, username, text, emotionData }) {
+    /**
+     * Батч-вариант: средние рейтинги эмоций сразу для списка фильмов (одним запросом).
+     * Возвращает map { movieId: ratings }; для фильмов без записи в `ratings` ключа не будет.
+     */
+    async getAvgEmotionRatingsByIds({ movieIds }) {
+      if (!movieIds || movieIds.length === 0) return {};
+
+      try {
+        return await fetchJson(`${apiUrl}/movies/avg-emotion-ratings/by-ids`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ movie_ids: movieIds }),
+        });
+      } catch (e) {
+        console.error('Ошибка при батч-загрузке рейтингов эмоций:', e);
+        return {};
+      }
+    },
+
+    async postReview({ movieId, tmdbId, username, text, emotionData }) {
+      const id = movieId ?? tmdbId;
       const payload = {
         username: username || null,
         text,
         ...(emotionData || {}),
       };
 
-      return await fetchJson(`${apiUrl}/movies/${encodeURIComponent(tmdbId)}/review`, {
+      return await fetchJson(`${apiUrl}/movies/${encodeURIComponent(id)}/review`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

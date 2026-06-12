@@ -21,10 +21,12 @@ class EmotionRatingsDB:
     def connect(self):
         """Подключение к базе данных"""
         try:
-            db_url = os.getenv("BOT_DATABASE_URL")
+            # Важно писать в ту же БД, которую читает KinoServer.
+            db_url = os.getenv("DATABASE_URL") or os.getenv("BOT_DATABASE_URL")
             if db_url:
+                db_url = db_url.replace("+asyncpg", "")
                 self.conn = psycopg2.connect(db_url)
-                print("Успешное подключение к базе данных (через DATABASE_URL)")
+                print("Успешное подключение к базе данных (через URL)")
                 return
 
             # Fallback для старых переменных (на всякий случай)
@@ -79,7 +81,7 @@ class EmotionRatingsDB:
         Вставляет или обновляет средние рейтинги эмоций для фильма.
 
         Args:
-            movie_id (int): ID фильма из TMDB
+            movie_id (int): kinopoisk_id фильма (совпадает с reviews.movie_id и movies.kinopoisk_id)
             emotion_averages (dict): Словарь со средними рейтингами эмоций
                 Пример: {'sadness': 3.5, 'optimism': 7.2, 'fear': 0.0, ...}
         """
