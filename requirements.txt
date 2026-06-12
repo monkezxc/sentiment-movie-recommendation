@@ -22,6 +22,9 @@ sentence-transformers
 huggingface-hub
 transformers==4.57.3
 torch==2.9.1
+pgvector>=0.3.0
+opencv-python
+ultralytics
 
 # --- KinoServer (FastAPI) ---
 fastapi>=0.115.0

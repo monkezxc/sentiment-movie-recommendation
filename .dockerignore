@@ -1,0 +1,15 @@
+.venv
+**/__pycache__
+**/*.pyc
+**/node_modules
+_film_data
+.git
+.gitignore
+*.pem
+**/.env
+KinoServer/data/
+**/.vite
+**/dist
+agent-transcripts
+mcps
+terminals
